@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Inverenix - Sistema Integrado</title>
+    <title>Inverenix - Control Total</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght=400;600;900&display=swap');
@@ -65,7 +65,7 @@
                     <h2 id="saldo-personal" class="text-4xl font-black text-white">$0.00</h2>
                 </div>
                 <div class="space-y-4">
-                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 font-bold">Gastos e Ingresos Diarios</h3>
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Gastos e Ingresos Diarios</h3>
                     <div id="lista-personal" class="space-y-3"></div>
                 </div>
             </div>
@@ -102,6 +102,7 @@
                     </button>
                 </div>
                 <form id="form-registro" class="space-y-5" onsubmit="handleFormSubmit(event)">
+                    <input type="hidden" id="edit-row-id" value="">
                     <div id="form-fields" class="space-y-4"></div>
                     <button type="submit" id="btn-submit" class="w-full bg-orange-500 py-6 rounded-3xl text-white font-black text-lg shadow-2xl active:scale-95 transition-all">CONFIRMAR</button>
                 </form>
@@ -110,8 +111,8 @@
     </div>
 
     <script>
-        // PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT GENERADA
-        const API_URL = "https://script.google.com/macros/s/AKfycbxf4QL7fOao09cariIwYQy6R4z4VxEYQBcZ4QpOx-iDQQ5PdiFEfIAmAsCuViimQ0er/exec";
+        // COLOCA AQUÍ LA URL DE TU APPS SCRIPT PRINCIPAL
+        const API_URL = "https://script.google.com/macros/s/AKfycbz373DP30lY-XdYjWnGzLWM5VvBVYg6fxi6htTXuVvf3zkJwtd5h280lB6SeqQIi1E6/exec";
         
         let dataGlobal = { "Caja": [], "Pedidos": [], "Finanzas Personales": [] };
 
@@ -168,16 +169,17 @@
         }
 
         function renderAll() {
-            // RENDERING: CAJA
+            // CAJA
             const lFlujo = document.getElementById('lista-flujo');
             if (lFlujo) {
                 lFlujo.innerHTML = '';
                 let sCaja = 0;
-                dataGlobal["Caja"].forEach(row => {
+                dataGlobal["Caja"].forEach((row, idx) => {
                     const i = cleanNum(row["Ingresos"]);
                     const e = cleanNum(row["Egresos"]);
                     const d = row["Descripción del Movimiento"] || "Movimiento";
                     const f = formatFecha(row["Fecha"]);
+                    const rId = row["rowId"];
                     
                     sCaja += (i - e);
                     const isIngreso = i > 0 || (i === 0 && e === 0);
@@ -185,31 +187,36 @@
                     
                     lFlujo.innerHTML += `
                         <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 flex justify-between items-center">
-                            <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-3 max-w-[65%]">
                                 <div class="${isIngreso ? 'text-green-500' : 'text-red-500'}">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${isIngreso ? 'M5 10l7-7m0 0l7 7m-7-7v18' : 'M19 14l-7 7m0 0l-7-7m7 7V3'}"></path></svg>
                                 </div>
-                                <div>
-                                    <p class="text-sm font-bold text-white leading-none">${d}</p>
+                                <div class="truncate">
+                                    <p class="text-sm font-bold text-white leading-none truncate">${d}</p>
                                     <p class="text-[9px] text-slate-500 font-black uppercase mt-1 tracking-tighter">${f}</p>
                                 </div>
                             </div>
-                            <p class="font-black ${isIngreso ? 'text-green-400' : 'text-red-400'}">${isIngreso ? '+' : '-'}$${montoMostrar.toFixed(2)}</p>
+                            <div class="flex items-center gap-2">
+                                <p class="font-black ${isIngreso ? 'text-green-400' : 'text-red-400'}">${isIngreso ? '+' : '-'}$${montoMostrar.toFixed(2)}</p>
+                                <button onclick="openModalEdit('Caja', ${idx})" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg text-xs">✏️</button>
+                                <button onclick="deleteRowConfirm('Caja', ${rId}, '${d}')" class="p-1.5 bg-red-950/30 hover:bg-red-900 text-red-400 rounded-lg text-xs">🗑️</button>
+                            </div>
                         </div>`;
                 });
                 document.getElementById('saldo-caja').innerText = `$${sCaja.toFixed(2)}`;
             }
 
-            // RENDERING: PEDIDOS
+            // PEDIDOS
             const lPedidos = document.getElementById('lista-pedidos');
             if (lPedidos) {
                 lPedidos.innerHTML = '';
-                dataGlobal["Pedidos"].forEach(row => {
+                dataGlobal["Pedidos"].forEach((row, idx) => {
                     const cli = row["Cliente"] || "Cliente sin nombre";
                     const prd = row["Pedido"] || "Producto";
                     const tot = cleanNum(row["Total"]);
                     const pago = cleanNum(row["Pagó"]);
                     const est = row["Estado"] || "Por pagar";
+                    const rId = row["rowId"];
                     const resta = cleanNum(row["Resta por Pagar"]) || (tot - pago);
 
                     let badgeColor = "text-slate-400 bg-slate-950";
@@ -219,11 +226,15 @@
                     lPedidos.innerHTML += `
                         <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4 shadow-xl">
                             <div class="flex justify-between items-start">
-                                <div class="max-w-[70%]">
+                                <div class="max-w-[55%]">
                                     <h4 class="text-white font-black text-lg leading-tight truncate">${cli}</h4>
-                                    <p class="text-orange-500 text-[10px] font-black uppercase mt-1 tracking-tighter">${prd}</p>
+                                    <p class="text-orange-500 text-[10px] font-black uppercase mt-1 tracking-tighter truncate">${prd}</p>
                                 </div>
-                                <span class="text-[8px] font-black px-2 py-1 border border-slate-800 rounded uppercase tracking-tighter ${badgeColor}">${est}</span>
+                                <div class="flex items-center gap-1.5">
+                                    <button onclick="openModalEdit('Pedidos', ${idx})" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl">✏️</button>
+                                    <button onclick="deleteRowConfirm('Pedidos', ${rId}, '${cli}')" class="p-2 bg-red-950/40 hover:bg-red-900 text-red-400 rounded-xl">🗑️</button>
+                                    <span class="text-[8px] font-black px-2 py-1 border border-slate-800 rounded uppercase tracking-tighter ${badgeColor}">${est}</span>
+                                </div>
                             </div>
                             <div class="grid grid-cols-3 gap-2 bg-slate-950/50 p-3 rounded-2xl text-center border border-slate-800">
                                 <div><p class="text-[8px] text-slate-500 font-bold uppercase">Total</p><p class="text-xs font-black text-white">$${tot.toFixed(2)}</p></div>
@@ -234,16 +245,17 @@
                 });
             }
 
-            // RENDERING: FINANZAS PERSONALES
+            // PERSONAL
             const lPers = document.getElementById('lista-personal');
             if (lPers) {
                 lPers.innerHTML = '';
                 let sPers = 0;
-                dataGlobal["Finanzas Personales"].forEach(row => {
+                dataGlobal["Finanzas Personales"].forEach((row, idx) => {
                     const i = cleanNum(row["Ingresos"]);
                     const e = cleanNum(row["Egresos"]);
                     const d = row["Descripción"] || "Movimiento";
                     const c = row["Categoría"] || "Varios";
+                    const rId = row["rowId"];
                     
                     sPers += (i - e);
                     const isIngreso = i > 0;
@@ -251,11 +263,15 @@
 
                     lPers.innerHTML += `
                         <div class="bg-slate-900 p-4 border-r-4 border-orange-500 rounded-l-2xl flex justify-between items-center shadow-md">
-                            <div>
-                                <p class="text-sm font-bold text-white leading-tight">${d}</p>
+                            <div class="max-w-[60%]">
+                                <p class="text-sm font-bold text-white leading-tight truncate">${d}</p>
                                 <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-1">${c}</p>
                             </div>
-                            <p class="font-black ${isIngreso ? 'text-green-400' : 'text-red-400'}">${isIngreso ? '+' : '-'}$${montoMostrar.toFixed(2)}</p>
+                            <div class="flex items-center gap-2">
+                                <p class="font-black ${isIngreso ? 'text-green-400' : 'text-red-400'}">${isIngreso ? '+' : '-'}$${montoMostrar.toFixed(2)}</p>
+                                <button onclick="openModalEdit('Personal', ${idx})" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg text-xs">✏️</button>
+                                <button onclick="deleteRowConfirm('Personal', ${rId}, '${d}')" class="p-1.5 bg-red-950/30 hover:bg-red-900 text-red-400 rounded-lg text-xs">🗑️</button>
+                            </div>
                         </div>`;
                 });
                 document.getElementById('saldo-personal').innerText = `$${sPers.toFixed(2)}`;
@@ -263,42 +279,106 @@
         }
 
         function openModal() {
+            document.getElementById('edit-row-id').value = ""; 
             const f = document.getElementById('form-fields'), t = document.getElementById('modal-title');
             if(!f || !t) return;
             f.innerHTML = '';
+            
             const isPersonal = document.getElementById('tab-personal').classList.contains('active');
             const isPedidos = document.getElementById('tab-pedidos').classList.contains('active');
 
             if (!isPedidos) {
-                t.innerText = isPersonal ? "FINANZAS PERSONALES" : "REGISTRO CAJA";
+                t.innerText = isPersonal ? "NUEVO FLUJO PERSONAL" : "NUEVO MOVIMIENTO CAJA";
                 f.innerHTML = `
                     <div class="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800 mb-4">
                         <button type="button" onclick="setTipo('Ingreso')" id="btn-ingreso" class="flex-1 py-3 rounded-xl font-black text-[10px] bg-orange-500 text-white shadow-lg">INGRESO</button>
                         <button type="button" onclick="setTipo('Egreso')" id="btn-egreso" class="flex-1 py-3 rounded-xl font-black text-[10px] text-slate-600">EGRESO</button>
                     </div>
                     <input type="hidden" id="tipo-registro" value="Ingreso">
-                    <input type="text" id="desc-registro" placeholder="Descripción *" required class="w-full p-5 rounded-2xl outline-none">
+                    <input type="text" id="desc-registro" placeholder="Descripción *" required class="w-full p-5 rounded-2xl">
                     <div class="relative">
                         <span class="absolute left-5 top-5 text-orange-500 font-black text-2xl">$</span>
-                        <input type="number" id="monto-registro" step="0.01" placeholder="0.00" required class="w-full p-5 pl-12 text-3xl font-black rounded-2xl outline-none">
+                        <input type="number" id="monto-registro" step="0.01" placeholder="0.00" required class="w-full p-5 pl-12 text-3xl font-black rounded-2xl">
                     </div>
-                    ${isPersonal?'<select id="cat-registro" class="w-full p-5 font-bold rounded-2xl outline-none"><option>Sueldo/Guardias</option><option>Ahorro</option><option>Alimentación</option><option>Transporte</option><option>Servicios</option></select>':''}`;
+                    ${isPersonal ? '<select id="cat-registro" class="w-full p-5 font-bold rounded-2xl"><option>Sueldo/Guardias</option><option>Ahorro</option><option>Alimentación</option><option>Transporte</option><option>Servicios</option></select>' : ''}`;
             } else {
                 t.innerText = "NUEVO PEDIDO";
                 f.innerHTML = `
-                    <input type="text" id="p-cliente" placeholder="Cliente *" required class="w-full p-5 font-bold rounded-2xl outline-none">
-                    <input type="text" id="p-pedido" placeholder="Pedido (Detalle) *" required class="w-full p-5 font-bold rounded-2xl outline-none">
+                    <input type="text" id="p-cliente" placeholder="Cliente *" required class="w-full p-5 font-bold rounded-2xl">
+                    <input type="text" id="p-pedido" placeholder="Pedido (Detalle) *" required class="w-full p-5 font-bold rounded-2xl">
                     <div class="grid grid-cols-2 gap-4">
-                        <input type="number" id="p-total" step="0.01" placeholder="Total $" required class="w-full p-5 font-black text-xl rounded-2xl outline-none">
-                        <input type="number" id="p-pago" step="0.01" placeholder="Pagó $" class="w-full p-5 font-black text-xl text-green-500 rounded-2xl outline-none">
+                        <input type="number" id="p-total" step="0.01" placeholder="Total $" required class="w-full p-5 font-black text-xl rounded-2xl">
+                        <input type="number" id="p-pago" step="0.01" placeholder="Pagó $" class="w-full p-5 font-black text-xl text-green-500 rounded-2xl">
                     </div>
-                    <select id="p-estado" class="w-full p-5 font-bold rounded-2xl outline-none">
+                    <select id="p-estado" class="w-full p-5 font-bold rounded-2xl">
                         <option>Por pagar</option>
                         <option>Pendiente entrega</option>
                         <option>Finalizado</option>
                     </select>`;
             }
             document.getElementById('modal-registro').classList.remove('hidden');
+        }
+
+        function openModalEdit(tab, idx) {
+            openModal(); 
+            const t = document.getElementById('modal-title');
+            
+            if (tab === 'Caja') {
+                const mov = dataGlobal["Caja"][idx];
+                t.innerText = "EDITAR MOVIMIENTO CAJA";
+                document.getElementById('edit-row-id').value = mov.rowId;
+                document.getElementById('desc-registro').value = mov["Descripción del Movimiento"] || "";
+                const ing = cleanNum(mov["Ingresos"]);
+                const egr = cleanNum(mov["Egresos"]);
+                setTipo(ing > 0 || (ing===0 && egr===0) ? 'Ingreso' : 'Egreso');
+                document.getElementById('monto-registro').value = ing > 0 ? ing : egr;
+            } 
+            else if (tab === 'Personal') {
+                const mov = dataGlobal["Finanzas Personales"][idx];
+                t.innerText = "EDITAR FLUJO PERSONAL";
+                document.getElementById('edit-row-id').value = mov.rowId;
+                document.getElementById('desc-registro').value = mov["Descripción"] || "";
+                const ing = cleanNum(mov["Ingresos"]);
+                const egr = cleanNum(mov["Egresos"]);
+                setTipo(ing > 0 ? 'Ingreso' : 'Egreso');
+                document.getElementById('monto-registro').value = ing > 0 ? ing : egr;
+                if(document.getElementById('cat-registro')) document.getElementById('cat-registro').value = mov["Categoría"] || "Varios";
+            } 
+            else if (tab === 'Pedidos') {
+                const ped = dataGlobal["Pedidos"][idx];
+                t.innerText = "EDITAR PEDIDO";
+                document.getElementById('edit-row-id').value = ped.rowId;
+                document.getElementById('p-cliente').value = ped["Cliente"] || "";
+                document.getElementById('p-pedido').value = ped["Pedido"] || "";
+                document.getElementById('p-total').value = cleanNum(ped["Total"]);
+                document.getElementById('p-pago').value = cleanNum(ped["Pagó"]);
+                document.getElementById('p-estado').value = ped["Estado"] || "Por pagar";
+            }
+        }
+
+        async function deleteRowConfirm(tab, rowId, identificador) {
+            if (!confirm(`¿Estás segura de eliminar "${identificador}" de la pestaña ${tab}?`)) return;
+            
+            const dot = document.getElementById('status-dot');
+            if (dot) dot.className = "w-2 h-2 rounded-full bg-yellow-500 animate-pulse";
+
+            let actionTarget = 'deleteCaja';
+            if(tab === 'Pedidos') actionTarget = 'deletePedido';
+            if(tab === 'Personal') actionTarget = 'deletePersonal';
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain' },
+                    body: JSON.stringify({ action: actionTarget, payload: { rowId: rowId } })
+                });
+                const res = await response.json();
+                if (res.status === 'success') fetchData();
+                else alert("Error al eliminar.");
+            } catch (err) {
+                alert("Error de red.");
+                console.error(err);
+            }
         }
 
         function setTipo(t) {
@@ -319,39 +399,43 @@
             
             const isPersonal = document.getElementById('tab-personal').classList.contains('active');
             const isPedidos = document.getElementById('tab-pedidos').classList.contains('active');
+            const editRowId = document.getElementById('edit-row-id').value;
 
-            let payload = { action: '', payload: {} };
+            let actionTarget = '';
+            let payloadData = { rowId: editRowId || "" };
+
             if (isPedidos) {
-                payload.action = 'addPedido';
-                payload.payload = { 
-                    cliente: document.getElementById('p-cliente').value, 
-                    pedido: document.getElementById('p-pedido').value, 
-                    total: parseFloat(document.getElementById('p-total').value || 0), 
-                    pago: parseFloat(document.getElementById('p-pago').value || 0), 
-                    estado: document.getElementById('p-estado').value 
-                };
+                actionTarget = editRowId ? 'editPedido' : 'addPedido';
+                payloadData.cliente = document.getElementById('p-cliente').value;
+                payloadData.pedido = document.getElementById('p-pedido').value;
+                payloadData.total = parseFloat(document.getElementById('p-total').value || 0);
+                payloadData.pago = parseFloat(document.getElementById('p-pago').value || 0);
+                payloadData.estado = document.getElementById('p-estado').value;
+            } else if (isPersonal) {
+                actionTarget = editRowId ? 'editPersonal' : 'addPersonal';
+                payloadData.descripcion = document.getElementById('desc-registro').value;
+                payloadData.tipo = document.getElementById('tipo-registro').value;
+                payloadData.monto = parseFloat(document.getElementById('monto-registro').value || 0);
+                payloadData.categoria = document.getElementById('cat-registro').value;
             } else {
-                payload.action = isPersonal ? 'addPersonal' : 'addCaja';
-                payload.payload = { 
-                    descripcion: document.getElementById('desc-registro').value, 
-                    tipo: document.getElementById('tipo-registro').value, 
-                    monto: parseFloat(document.getElementById('monto-registro').value || 0),
-                    categoria: isPersonal ? document.getElementById('cat-registro').value : ""
-                };
+                actionTarget = editRowId ? 'editCaja' : 'addCaja';
+                payloadData.descripcion = document.getElementById('desc-registro').value;
+                payloadData.tipo = document.getElementById('tipo-registro').value;
+                payloadData.monto = parseFloat(document.getElementById('monto-registro').value || 0);
             }
 
             try {
                 const response = await fetch(API_URL, { 
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ action: actionTarget, payload: payloadData })
                 });
                 const resJson = await response.json();
                 if(resJson.status === "success") {
                     closeModal(); 
                     fetchData();
                 } else {
-                    alert("❌ Error en script externo.");
+                    alert("❌ Error en script.");
                 }
             } catch (err) { 
                 alert("❌ Error de comunicación de red.");
