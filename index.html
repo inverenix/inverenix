@@ -14,20 +14,20 @@
         input:focus { border-color: #f97316 !important; outline: none; }
         .loader-spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .card-bg { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="text-slate-200 overflow-hidden">
 
-    <div class="max-w-md mx-auto h-screen flex flex-col relative shadow-2xl bg-slate-950">
+    <div class="max-w-md mx-auto h-screen flex flex-col relative shadow-2xl bg-slate-950 border-x border-slate-900">
         
         <!-- HEADER -->
         <header class="p-6 flex justify-between items-center border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
             <div>
                 <h1 class="text-2xl font-black italic text-white tracking-tighter leading-none uppercase">Inverenix</h1>
                 <div class="flex items-center gap-1.5 mt-1">
-                    <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-slate-700"></span>
-                    <span id="status-text" class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Sincronizando...</span>
+                    <span id="status-dot" class="w-2 h-2 rounded-full bg-slate-700"></span>
+                    <span id="status-text" class="text-[9px] font-black uppercase text-slate-500 tracking-widest">Sincronizando...</span>
                 </div>
             </div>
             <button onclick="fetchData()" class="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center hover:bg-slate-800 transition-all active:scale-95">
@@ -42,12 +42,12 @@
             
             <!-- SECCIÓN: CAJA -->
             <div id="tab-flujo" class="tab-content active">
-                <div class="card-bg p-8 rounded-[2.5rem] border border-slate-700/50 mb-8 shadow-xl">
-                    <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Saldo en Caja</p>
+                <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-8 rounded-[2.5rem] border border-slate-700/50 mb-8 shadow-xl">
+                    <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Saldo Total en Caja</p>
                     <h2 id="saldo-caja" class="text-4xl font-black text-white">$0.00</h2>
                 </div>
                 <div class="space-y-4">
-                    <h3 class="text-[10px] font-black text-orange-500 uppercase tracking-widest ml-2">Movimientos de Caja</h3>
+                    <h3 class="text-[10px] font-black text-orange-500 uppercase tracking-widest ml-2">Movimientos Recientes</h3>
                     <div id="lista-flujo" class="space-y-3"></div>
                 </div>
             </div>
@@ -61,11 +61,11 @@
             <!-- SECCIÓN: PERSONAL -->
             <div id="tab-personal" class="tab-content">
                 <div class="bg-orange-500 p-8 rounded-[2.5rem] shadow-xl shadow-orange-900/20 mb-8">
-                    <p class="text-orange-100 text-[10px] font-black uppercase tracking-widest mb-1">Saldo Personal</p>
+                    <p class="text-orange-100 text-[10px] font-black uppercase tracking-widest mb-1">Disponible Personal</p>
                     <h2 id="saldo-personal" class="text-4xl font-black text-white">$0.00</h2>
                 </div>
                 <div class="space-y-4">
-                    <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2 text-white">Gastos Privados</h3>
+                    <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2 text-white font-bold">Gastos Privados</h3>
                     <div id="lista-personal" class="space-y-3"></div>
                 </div>
             </div>
@@ -92,7 +92,7 @@
             </button>
         </nav>
 
-        <!-- MODAL REGISTRO -->
+        <!-- MODAL -->
         <div id="modal-registro" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[100] hidden flex items-end">
             <div class="w-full bg-slate-900 rounded-t-[3rem] p-8 border-t border-slate-800 transition-all shadow-2xl">
                 <div class="flex justify-between items-center mb-8">
@@ -110,24 +110,30 @@
     </div>
 
     <script>
-        // URL ACTUALIZADA
         const API_URL = "https://script.google.com/macros/s/AKfycbxPY41lusUnRyqKMhpaGJjNWvWSLbpMzmR68t21JINxhVrfnliJeThjzu924pccrdak/exec";
         
-        let currentTab = 'flujo';
         let dataGlobal = { flujo: [], pedidos: [], gastos: [] };
 
-        // --- BUSCADOR INTELIGENTE DE COLUMNAS ---
-        function get(row, keywords) {
+        // --- MOTOR DE EXTRACCIÓN ULTRA-FLEXIBLE ---
+        function smartGet(row, keywords) {
+            if (!row) return "";
             const keys = Object.keys(row);
             for (let k of keys) {
-                let cleanKey = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z]/g, "");
-                if (keywords.some(word => cleanKey.includes(word))) return row[k];
+                let normalizedK = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+                if (keywords.some(word => normalizedK.includes(word))) return row[k];
             }
             return "";
         }
 
+        // --- LIMPIADOR DE NÚMEROS (Quita $, comas y espacios) ---
+        function cleanNum(val) {
+            if (typeof val === 'number') return val;
+            if (!val) return 0;
+            let clean = val.toString().replace(/[^0-9.,-]/g, "").replace(",", ".");
+            return parseFloat(clean) || 0;
+        }
+
         function switchTab(tab) {
-            currentTab = tab;
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.getElementById(`tab-${tab}`).classList.add('active');
             document.querySelectorAll('.nav-item').forEach(el => {
@@ -142,25 +148,30 @@
             const dot = document.getElementById('status-dot');
             const txt = document.getElementById('status-text');
             icon.classList.add('loader-spin');
-            dot.className = "w-2.5 h-2.5 rounded-full bg-yellow-500 animate-pulse";
-            txt.innerText = "Conectando...";
+            dot.className = "w-2 h-2 rounded-full bg-yellow-500 animate-pulse";
+            txt.innerText = "Sincronizando...";
 
             try {
                 const response = await fetch(API_URL);
                 const json = await response.json();
                 
-                // Mapear los datos que vienen del script
-                dataGlobal.flujo = json.flujo || [];
-                dataGlobal.pedidos = json.pedidos || [];
-                dataGlobal.gastos = json.gastos || [];
+                console.log("--- DEBUG: Datos Recibidos de Google ---");
+                console.log(json);
+
+                // Asignación flexible por palabras clave en las propiedades del JSON
+                const findKey = (obj, word) => Object.keys(obj).find(k => k.toLowerCase().includes(word));
+                
+                dataGlobal.flujo = json[findKey(json, 'flujo')] || [];
+                dataGlobal.pedidos = json[findKey(json, 'pedido')] || [];
+                dataGlobal.gastos = json[findKey(json, 'gasto')] || json[findKey(json, 'personal')] || [];
                 
                 renderAll();
-                dot.className = "w-2.5 h-2.5 rounded-full bg-green-500";
+                dot.className = "w-2 h-2 rounded-full bg-green-500";
                 txt.innerText = "Online";
             } catch (err) {
-                dot.className = "w-2.5 h-2.5 rounded-full bg-red-500";
-                txt.innerText = "Offline";
-                console.error(err);
+                dot.className = "w-2 h-2 rounded-full bg-red-500";
+                txt.innerText = "Error Red";
+                console.error("Error en Fetch:", err);
             } finally {
                 icon.classList.remove('loader-spin');
             }
@@ -172,12 +183,24 @@
             lFlujo.innerHTML = '';
             let sCaja = 0;
             dataGlobal.flujo.forEach(row => {
-                const i = parseFloat(get(row, ['ingresopos', 'ingreso'])) || 0;
-                const e = parseFloat(get(row, ['egresoneg', 'egreso'])) || 0;
-                const d = get(row, ['descrip', 'movim']) || "Movimiento";
-                const f = get(row, ['fecha']) || "";
+                const i = cleanNum(smartGet(row, ['ingreso', 'ing']));
+                const e = cleanNum(smartGet(row, ['egreso', 'egr']));
+                const d = smartGet(row, ['descrip', 'movim', 'detalle']) || "Movimiento";
+                const f = smartGet(row, ['fecha']) || "";
                 sCaja += (i - e);
-                lFlujo.innerHTML += `<div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 flex justify-between items-center"><div class="flex items-center gap-3"><div class="${i > 0 ? 'text-green-500' : 'text-red-500'}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${i > 0 ? 'M5 10l7-7m0 0l7 7m-7-7v18' : 'M19 14l-7 7m0 0l-7-7m7 7V3'}"></path></svg></div><div><p class="text-sm font-bold text-white leading-none">${d}</p><p class="text-[9px] text-slate-500 font-black uppercase mt-1">${f ? new Date(f).toLocaleDateString('es-VE',{day:'2-digit',month:'2-digit'}) : 'S/F'}</p></div></div><p class="font-black ${i > 0 ? 'text-green-400' : 'text-red-400'}">$${(i || e).toFixed(2)}</p></div>`;
+                lFlujo.innerHTML += `
+                    <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <div class="${i > 0 ? 'text-green-500' : 'text-red-500'}">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${i > 0 ? 'M5 10l7-7m0 0l7 7m-7-7v18' : 'M19 14l-7 7m0 0l-7-7m7 7V3'}"></path></svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-white leading-none">${d}</p>
+                                <p class="text-[9px] text-slate-500 font-black uppercase mt-1 tracking-tighter">${f ? new Date(f).toLocaleDateString('es-VE',{day:'2-digit',month:'2-digit'}) : 'S/F'}</p>
+                            </div>
+                        </div>
+                        <p class="font-black ${i > 0 ? 'text-green-400' : 'text-red-400'}">$${(i || e).toFixed(2)}</p>
+                    </div>`;
             });
             document.getElementById('saldo-caja').innerText = `$${sCaja.toFixed(2)}`;
 
@@ -185,12 +208,26 @@
             const lPedidos = document.getElementById('lista-pedidos');
             lPedidos.innerHTML = '';
             dataGlobal.pedidos.forEach(row => {
-                const cli = get(row, ['client']) || "Cliente";
-                const prd = get(row, ['product', 'pedido']) || "Producto";
-                const tot = parseFloat(get(row, ['total'])) || 0;
-                const abo = parseFloat(get(row, ['abon'])) || 0;
-                const est = get(row, ['estado']) || "Por Diseñar";
-                lPedidos.innerHTML += `<div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4"><div class="flex justify-between items-start"><div><h4 class="text-white font-black text-lg leading-tight">${cli}</h4><p class="text-orange-500 text-[10px] font-black uppercase mt-1 tracking-tighter">${prd}</p></div><span class="text-[9px] font-black px-2 py-1 bg-slate-950 border border-slate-800 rounded text-slate-400 uppercase">${est}</span></div><div class="grid grid-cols-3 gap-2 bg-slate-950/50 p-3 rounded-2xl text-center"><div><p class="text-[8px] text-slate-500 font-bold uppercase">Total</p><p class="text-xs font-black text-white">$${tot.toFixed(2)}</p></div><div class="border-x border-slate-800"><p class="text-[8px] text-slate-500 font-bold uppercase tracking-tighter">Abonó</p><p class="text-xs font-black text-green-400">$${abo.toFixed(2)}</p></div><div><p class="text-[8px] text-slate-500 font-bold uppercase tracking-tighter">Resta</p><p class="text-xs font-black text-orange-500">$${(tot-abo).toFixed(2)}</p></div></div></div>`;
+                const cli = smartGet(row, ['client', 'nombre']) || "Cliente";
+                const prd = smartGet(row, ['product', 'pedido', 'detalle']) || "Producto";
+                const tot = cleanNum(smartGet(row, ['total', 'monto']));
+                const abo = cleanNum(smartGet(row, ['abon', 'pago']));
+                const est = smartGet(row, ['estado', 'estatus']) || "Pendiente";
+                lPedidos.innerHTML += `
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4 shadow-xl">
+                        <div class="flex justify-between items-start">
+                            <div class="max-w-[70%]">
+                                <h4 class="text-white font-black text-lg leading-tight truncate">${cli}</h4>
+                                <p class="text-orange-500 text-[10px] font-black uppercase mt-1 tracking-tighter">${prd}</p>
+                            </div>
+                            <span class="text-[8px] font-black px-2 py-1 bg-slate-950 border border-slate-800 rounded text-slate-400 uppercase tracking-tighter">${est}</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 bg-slate-950/50 p-3 rounded-2xl text-center border border-slate-800">
+                            <div><p class="text-[8px] text-slate-500 font-bold uppercase">Total</p><p class="text-xs font-black text-white">$${tot.toFixed(1)}</p></div>
+                            <div class="border-x border-slate-800"><p class="text-[8px] text-slate-500 font-bold uppercase">Abonó</p><p class="text-xs font-black text-green-400">$${abo.toFixed(1)}</p></div>
+                            <div><p class="text-[8px] text-slate-500 font-bold uppercase">Resta</p><p class="text-xs font-black text-orange-500">$${(tot-abo).toFixed(1)}</p></div>
+                        </div>
+                    </div>`;
             });
 
             // RENDER PERSONAL
@@ -198,12 +235,19 @@
             lPers.innerHTML = '';
             let sPers = 0;
             dataGlobal.gastos.forEach(row => {
-                const i = parseFloat(get(row, ['ingresopos', 'ingreso'])) || 0;
-                const e = parseFloat(get(row, ['egresoneg', 'egreso'])) || 0;
-                const d = get(row, ['concep', 'descrip']) || "Gasto";
-                const c = get(row, ['categ']) || "General";
+                const i = cleanNum(smartGet(row, ['ingreso', 'ing']));
+                const e = cleanNum(smartGet(row, ['egreso', 'egr']));
+                const d = smartGet(row, ['concep', 'descrip', 'detalle']) || "Gasto";
+                const c = smartGet(row, ['categ', 'tipo']) || "Varios";
                 sPers += (i - e);
-                lPers.innerHTML += `<div class="bg-slate-900 p-4 border-r-4 border-orange-500 rounded-l-2xl flex justify-between items-center"><div><p class="text-sm font-bold text-white leading-tight">${d}</p><p class="text-[10px] text-slate-500 font-black uppercase mt-1 tracking-widest">${c}</p></div><p class="font-black ${i > 0 ? 'text-green-400' : 'text-red-400'}">${i > 0 ? '+' : '-'}$${(i || e).toFixed(2)}</p></div>`;
+                lPers.innerHTML += `
+                    <div class="bg-slate-900 p-4 border-r-4 border-orange-500 rounded-l-2xl flex justify-between items-center shadow-md">
+                        <div>
+                            <p class="text-sm font-bold text-white leading-tight">${d}</p>
+                            <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-1">${c}</p>
+                        </div>
+                        <p class="font-black ${i > 0 ? 'text-green-400' : 'text-red-400'}">${i > 0 ? '+' : '-'}$${(i || e).toFixed(2)}</p>
+                    </div>`;
             });
             document.getElementById('saldo-personal').innerText = `$${sPers.toFixed(2)}`;
         }
@@ -211,9 +255,12 @@
         function openModal() {
             const f = document.getElementById('form-fields'), t = document.getElementById('modal-title');
             f.innerHTML = '';
-            if (currentTab === 'flujo' || currentTab === 'personal') {
-                t.innerText = currentTab === 'flujo' ? "REGISTRO CAJA" : "GASTO PERSONAL";
-                f.innerHTML = `<div class="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800 mb-4"><button type="button" onclick="setTipo('Ingreso')" id="btn-ingreso" class="flex-1 py-3 rounded-xl font-black text-[10px] bg-orange-500 text-white">INGRESO (+)</button><button type="button" onclick="setTipo('Egreso')" id="btn-egreso" class="flex-1 py-3 rounded-xl font-black text-[10px] text-slate-600">EGRESO (-)</button></div><input type="hidden" id="tipo-registro" value="Ingreso"><input type="text" id="desc-registro" placeholder="Descripción *" required class="w-full p-5 rounded-2xl outline-none"><div class="relative"><span class="absolute left-5 top-5 text-orange-500 font-black text-2xl">$</span><input type="number" id="monto-registro" step="0.01" placeholder="0.00" required class="w-full p-5 pl-12 text-3xl font-black rounded-2xl outline-none"></div>${currentTab==='personal' ? '<select id="cat-registro" class="w-full p-5 font-bold rounded-2xl"><option>Alimentación</option><option>Transporte</option><option>Servicios</option><option>Sueldo</option><option>Ahorro</option></select>':''}`;
+            const isPersonal = document.getElementById('tab-personal').classList.contains('active');
+            const isPedidos = document.getElementById('tab-pedidos').classList.contains('active');
+
+            if (!isPedidos) {
+                t.innerText = isPersonal ? "GASTO PERSONAL" : "REGISTRO CAJA";
+                f.innerHTML = `<div class="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800 mb-4"><button type="button" onclick="setTipo('Ingreso')" id="btn-ingreso" class="flex-1 py-3 rounded-xl font-black text-[10px] bg-orange-500 text-white shadow-lg">INGRESO</button><button type="button" onclick="setTipo('Egreso')" id="btn-egreso" class="flex-1 py-3 rounded-xl font-black text-[10px] text-slate-600">EGRESO</button></div><input type="hidden" id="tipo-registro" value="Ingreso"><input type="text" id="desc-registro" placeholder="Descripción *" required class="w-full p-5 rounded-2xl outline-none"><div class="relative"><span class="absolute left-5 top-5 text-orange-500 font-black text-2xl">$</span><input type="number" id="monto-registro" step="0.01" placeholder="0.00" required class="w-full p-5 pl-12 text-3xl font-black rounded-2xl outline-none"></div>${isPersonal?'<select id="cat-registro" class="w-full p-5 font-bold rounded-2xl outline-none"><option>Alimentación</option><option>Transporte</option><option>Servicios</option><option>Sueldo</option><option>Ahorro</option></select>':''}`;
             } else {
                 t.innerText = "NUEVO PEDIDO";
                 f.innerHTML = `<input type="text" id="p-cliente" placeholder="Cliente *" required class="w-full p-5 font-bold rounded-2xl outline-none"><input type="text" id="p-prod" placeholder="Producto *" required class="w-full p-5 font-bold rounded-2xl outline-none"><div class="grid grid-cols-2 gap-4"><input type="number" id="p-total" step="0.01" placeholder="Total $" required class="w-full p-5 font-black text-xl rounded-2xl outline-none"><input type="number" id="p-abono" step="0.01" placeholder="Abonó $" class="w-full p-5 font-black text-xl text-green-500 rounded-2xl outline-none"></div>`;
@@ -232,24 +279,30 @@
         async function handleFormSubmit(e) {
             e.preventDefault();
             const btn = document.getElementById('btn-submit');
-            btn.disabled = true; btn.innerText = "ENVIANDO...";
+            btn.disabled = true; btn.innerText = "PROCESANDO...";
+            
+            const isPersonal = document.getElementById('tab-personal').classList.contains('active');
+            const isPedidos = document.getElementById('tab-pedidos').classList.contains('active');
 
             let payload = { action: '', payload: {} };
-            if (currentTab === 'flujo') {
-                payload.action = 'addFlujo';
-                payload.payload = { descripcion: document.getElementById('desc-registro').value, tipo: document.getElementById('tipo-registro').value, monto: parseFloat(document.getElementById('monto-registro').value) };
-            } else if (currentTab === 'pedidos') {
+            if (isPedidos) {
                 payload.action = 'addPedido';
                 payload.payload = { cliente: document.getElementById('p-cliente').value, producto: document.getElementById('p-prod').value, total: parseFloat(document.getElementById('p-total').value), abono: parseFloat(document.getElementById('p-abono').value || 0), estado: 'Por Diseñar' };
             } else {
-                payload.action = 'addGastoPersonal';
-                payload.payload = { concepto: document.getElementById('desc-registro').value, categoria: document.getElementById('cat-registro').value, tipo: document.getElementById('tipo-registro').value, monto: parseFloat(document.getElementById('monto-registro').value) };
+                payload.action = isPersonal ? 'addGastoPersonal' : 'addFlujo';
+                payload.payload = { 
+                    descripcion: document.getElementById('desc-registro').value, 
+                    concepto: document.getElementById('desc-registro').value,
+                    tipo: document.getElementById('tipo-registro').value, 
+                    monto: parseFloat(document.getElementById('monto-registro').value),
+                    categoria: isPersonal ? document.getElementById('cat-registro').value : ""
+                };
             }
 
             try {
                 await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
                 setTimeout(() => {
-                    alert("✅ Guardado con éxito");
+                    alert("✅ Guardado");
                     closeModal(); fetchData();
                     btn.disabled = false; btn.innerText = "CONFIRMAR";
                 }, 1000);
