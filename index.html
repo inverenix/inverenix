@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Inverenix - Control Financiero</title>
+    <title>Inverenix - Sistema Integrado</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght=400;600;900&display=swap');
@@ -21,6 +21,7 @@
 
     <div class="max-w-md mx-auto h-screen flex flex-col relative shadow-2xl bg-slate-950 border-x border-slate-900">
         
+        <!-- HEADER -->
         <header class="p-6 flex justify-between items-center border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
             <div>
                 <h1 class="text-2xl font-black italic text-white tracking-tighter leading-none uppercase">Inverenix</h1>
@@ -36,8 +37,10 @@
             </button>
         </header>
 
+        <!-- CONTENIDO PRINCIPAL -->
         <main class="flex-1 overflow-y-auto p-5 pb-36 no-scrollbar">
             
+            <!-- VISTA CAJA -->
             <div id="tab-flujo" class="tab-content active">
                 <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-8 rounded-[2.5rem] border border-slate-700/50 mb-8 shadow-xl">
                     <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Saldo Total en Caja</p>
@@ -49,27 +52,31 @@
                 </div>
             </div>
 
+            <!-- VISTA PEDIDOS -->
             <div id="tab-pedidos" class="tab-content">
                 <h2 class="text-xl font-black text-white italic mb-6">Control de Pedidos</h2>
                 <div id="lista-pedidos" class="space-y-4"></div>
             </div>
 
+            <!-- VISTA PERSONAL -->
             <div id="tab-personal" class="tab-content">
                 <div class="bg-orange-500 p-8 rounded-[2.5rem] shadow-xl shadow-orange-900/20 mb-8">
                     <p class="text-orange-100 text-[10px] font-black uppercase tracking-widest mb-1">Disponible Personal</p>
                     <h2 id="saldo-personal" class="text-4xl font-black text-white">$0.00</h2>
                 </div>
                 <div class="space-y-4">
-                    <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2 text-white font-bold">Gastos Privados</h3>
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2 font-bold">Gastos e Ingresos Diarios</h3>
                     <div id="lista-personal" class="space-y-3"></div>
                 </div>
             </div>
         </main>
 
+        <!-- BOTÓN ACCIÓN FLOTANTE -->
         <button onclick="openModal()" class="fixed bottom-28 right-6 w-16 h-16 bg-orange-500 rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-orange-500/40 active:scale-90 z-40 border-4 border-slate-950">
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 5v14M5 12h14"></path></svg>
         </button>
 
+        <!-- NAVEGACIÓN INFERIOR -->
         <nav class="bg-slate-900/90 backdrop-blur-2xl border-t border-slate-800 px-10 py-6 fixed bottom-0 w-full max-w-md flex justify-between items-center z-50">
             <button onclick="switchTab('flujo')" class="nav-item flex flex-col items-center gap-1.5 text-orange-500" data-tab="flujo">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
@@ -85,6 +92,7 @@
             </button>
         </nav>
 
+        <!-- FORMULARIO EMERGENTE MODAL -->
         <div id="modal-registro" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[100] hidden flex items-end">
             <div class="w-full bg-slate-900 rounded-t-[3rem] p-8 border-t border-slate-800 transition-all shadow-2xl">
                 <div class="flex justify-between items-center mb-8">
@@ -102,25 +110,23 @@
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbxPY41lusUnRyqKMhpaGJjNWvWSLbpMzmR68t21JINxhVrfnliJeThjzu924pccrdak/exec";
+        // PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT GENERADA
+        const API_URL = "https://script.google.com/macros/s/AKfycbxf4QL7fOao09cariIwYQy6R4z4VxEYQBcZ4QpOx-iDQQ5PdiFEfIAmAsCuViimQ0er/exec";
         
-        let dataGlobal = { "Inverenix - Flujo Caja": [], "Inverenix - Pedidos": [], "Gastos Personales": [] };
-
-        function smartGet(row, keywords) {
-            if (!row) return "";
-            const keys = Object.keys(row);
-            for (let k of keys) {
-                let normalizedK = k.toLowerCase().trim();
-                if (keywords.some(word => normalizedK.includes(word))) return row[k];
-            }
-            return "";
-        }
+        let dataGlobal = { "Caja": [], "Pedidos": [], "Finanzas Personales": [] };
 
         function cleanNum(val) {
             if (typeof val === 'number') return val;
             if (!val) return 0;
             let clean = val.toString().replace(/[^0-9.,-]/g, "").replace(",", ".");
             return parseFloat(clean) || 0;
+        }
+
+        function formatFecha(val) {
+            if (!val) return "S/F";
+            let d = new Date(val);
+            if (isNaN(d.getTime())) return val.toString().split("T")[0];
+            return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
         }
 
         function switchTab(tab) {
@@ -145,9 +151,9 @@
                 const response = await fetch(API_URL);
                 const json = await response.json();
                 
-                dataGlobal["Inverenix - Flujo Caja"] = json["Inverenix - Flujo Caja"] || [];
-                dataGlobal["Inverenix - Pedidos"] = json["Inverenix - Pedidos"] || [];
-                dataGlobal["Gastos Personales"] = json["Gastos Personales"] || [];
+                dataGlobal["Caja"] = json["Caja"] || [];
+                dataGlobal["Pedidos"] = json["Pedidos"] || [];
+                dataGlobal["Finanzas Personales"] = json["Finanzas Personales"] || [];
                 
                 renderAll();
                 if (dot) dot.className = "w-2 h-2 rounded-full bg-green-500";
@@ -162,15 +168,16 @@
         }
 
         function renderAll() {
+            // RENDERING: CAJA
             const lFlujo = document.getElementById('lista-flujo');
             if (lFlujo) {
                 lFlujo.innerHTML = '';
                 let sCaja = 0;
-                dataGlobal["Inverenix - Flujo Caja"].forEach(row => {
-                    const i = cleanNum(smartGet(row, ['ingreso', '(+)']));
-                    const e = cleanNum(smartGet(row, ['egreso', '(-)']));
-                    const d = smartGet(row, ['descrip', 'movim', 'detalle', 'concepto']) || "Movimiento";
-                    const f = smartGet(row, ['fecha']) || "";
+                dataGlobal["Caja"].forEach(row => {
+                    const i = cleanNum(row["Ingresos"]);
+                    const e = cleanNum(row["Egresos"]);
+                    const d = row["Descripción del Movimiento"] || "Movimiento";
+                    const f = formatFecha(row["Fecha"]);
                     
                     sCaja += (i - e);
                     const isIngreso = i > 0 || (i === 0 && e === 0);
@@ -184,7 +191,7 @@
                                 </div>
                                 <div>
                                     <p class="text-sm font-bold text-white leading-none">${d}</p>
-                                    <p class="text-[9px] text-slate-500 font-black uppercase mt-1 tracking-tighter">${f || 'S/F'}</p>
+                                    <p class="text-[9px] text-slate-500 font-black uppercase mt-1 tracking-tighter">${f}</p>
                                 </div>
                             </div>
                             <p class="font-black ${isIngreso ? 'text-green-400' : 'text-red-400'}">${isIngreso ? '+' : '-'}$${montoMostrar.toFixed(2)}</p>
@@ -193,20 +200,21 @@
                 document.getElementById('saldo-caja').innerText = `$${sCaja.toFixed(2)}`;
             }
 
+            // RENDERING: PEDIDOS
             const lPedidos = document.getElementById('lista-pedidos');
             if (lPedidos) {
                 lPedidos.innerHTML = '';
-                dataGlobal["Inverenix - Pedidos"].forEach(row => {
-                    const cli = smartGet(row, ['client', 'nombre']) || "Cliente";
-                    const prd = smartGet(row, ['product', 'pedido', 'detalle']) || "Producto";
-                    const tot = cleanNum(smartGet(row, ['total', 'monto']));
-                    const abo = cleanNum(smartGet(row, ['abon', 'pago']));
-                    const est = smartGet(row, ['estado', 'estatus']) || "Pendiente";
-                    const resta = tot - abo;
+                dataGlobal["Pedidos"].forEach(row => {
+                    const cli = row["Cliente"] || "Cliente sin nombre";
+                    const prd = row["Pedido"] || "Producto";
+                    const tot = cleanNum(row["Total"]);
+                    const pago = cleanNum(row["Pagó"]);
+                    const est = row["Estado"] || "Por pagar";
+                    const resta = cleanNum(row["Resta por Pagar"]) || (tot - pago);
 
                     let badgeColor = "text-slate-400 bg-slate-950";
-                    if(est.toLowerCase().includes("finalizado") || est.toLowerCase().includes("entregado")) badgeColor = "text-green-400 bg-green-950/40";
-                    if(est.toLowerCase().includes("disen") || est.toLowerCase().includes("proceso") || est.toLowerCase().includes("pagar")) badgeColor = "text-orange-400 bg-orange-950/40";
+                    if(est.toLowerCase().includes("finalizado") || est.toLowerCase().includes("entrega")) badgeColor = "text-green-400 bg-green-950/40";
+                    if(est.toLowerCase().includes("proceso") || est.toLowerCase().includes("pagar")) badgeColor = "text-orange-400 bg-orange-950/40";
 
                     lPedidos.innerHTML += `
                         <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4 shadow-xl">
@@ -219,22 +227,23 @@
                             </div>
                             <div class="grid grid-cols-3 gap-2 bg-slate-950/50 p-3 rounded-2xl text-center border border-slate-800">
                                 <div><p class="text-[8px] text-slate-500 font-bold uppercase">Total</p><p class="text-xs font-black text-white">$${tot.toFixed(2)}</p></div>
-                                <div class="border-x border-slate-800"><p class="text-[8px] text-slate-500 font-bold uppercase">Abonó</p><p class="text-xs font-black text-green-400">$${abo.toFixed(2)}</p></div>
+                                <div class="border-x border-slate-800"><p class="text-[8px] text-slate-500 font-bold uppercase">Pagó</p><p class="text-xs font-black text-green-400">$${pago.toFixed(2)}</p></div>
                                 <div><p class="text-[8px] text-slate-500 font-bold uppercase">Resta</p><p class="text-xs font-black text-orange-500">$${resta.toFixed(2)}</p></div>
                             </div>
                         </div>`;
                 });
             }
 
+            // RENDERING: FINANZAS PERSONALES
             const lPers = document.getElementById('lista-personal');
             if (lPers) {
                 lPers.innerHTML = '';
                 let sPers = 0;
-                dataGlobal["Gastos Personales"].forEach(row => {
-                    const i = cleanNum(smartGet(row, ['ingreso', '(+)']));
-                    const e = cleanNum(smartGet(row, ['egreso', '(-)']));
-                    const d = smartGet(row, ['concep', 'descrip', 'detalle']) || "Gasto";
-                    const c = smartGet(row, ['categ', 'tipo']) || "Varios";
+                dataGlobal["Finanzas Personales"].forEach(row => {
+                    const i = cleanNum(row["Ingresos"]);
+                    const e = cleanNum(row["Egresos"]);
+                    const d = row["Descripción"] || "Movimiento";
+                    const c = row["Categoría"] || "Varios";
                     
                     sPers += (i - e);
                     const isIngreso = i > 0;
@@ -261,7 +270,7 @@
             const isPedidos = document.getElementById('tab-pedidos').classList.contains('active');
 
             if (!isPedidos) {
-                t.innerText = isPersonal ? "GASTO PERSONAL" : "REGISTRO CAJA";
+                t.innerText = isPersonal ? "FINANZAS PERSONALES" : "REGISTRO CAJA";
                 f.innerHTML = `
                     <div class="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800 mb-4">
                         <button type="button" onclick="setTipo('Ingreso')" id="btn-ingreso" class="flex-1 py-3 rounded-xl font-black text-[10px] bg-orange-500 text-white shadow-lg">INGRESO</button>
@@ -273,16 +282,21 @@
                         <span class="absolute left-5 top-5 text-orange-500 font-black text-2xl">$</span>
                         <input type="number" id="monto-registro" step="0.01" placeholder="0.00" required class="w-full p-5 pl-12 text-3xl font-black rounded-2xl outline-none">
                     </div>
-                    ${isPersonal?'<select id="cat-registro" class="w-full p-5 font-bold rounded-2xl outline-none"><option>Alimentación</option><option>Transporte</option><option>Servicios</option><option>Sueldo</option><option>Ahorro</option></select>':''}`;
+                    ${isPersonal?'<select id="cat-registro" class="w-full p-5 font-bold rounded-2xl outline-none"><option>Sueldo/Guardias</option><option>Ahorro</option><option>Alimentación</option><option>Transporte</option><option>Servicios</option></select>':''}`;
             } else {
                 t.innerText = "NUEVO PEDIDO";
                 f.innerHTML = `
                     <input type="text" id="p-cliente" placeholder="Cliente *" required class="w-full p-5 font-bold rounded-2xl outline-none">
-                    <input type="text" id="p-prod" placeholder="Producto *" required class="w-full p-5 font-bold rounded-2xl outline-none">
+                    <input type="text" id="p-pedido" placeholder="Pedido (Detalle) *" required class="w-full p-5 font-bold rounded-2xl outline-none">
                     <div class="grid grid-cols-2 gap-4">
                         <input type="number" id="p-total" step="0.01" placeholder="Total $" required class="w-full p-5 font-black text-xl rounded-2xl outline-none">
-                        <input type="number" id="p-abono" step="0.01" placeholder="Abonó $" class="w-full p-5 font-black text-xl text-green-500 rounded-2xl outline-none">
-                    </div>`;
+                        <input type="number" id="p-pago" step="0.01" placeholder="Pagó $" class="w-full p-5 font-black text-xl text-green-500 rounded-2xl outline-none">
+                    </div>
+                    <select id="p-estado" class="w-full p-5 font-bold rounded-2xl outline-none">
+                        <option>Por pagar</option>
+                        <option>Pendiente entrega</option>
+                        <option>Finalizado</option>
+                    </select>`;
             }
             document.getElementById('modal-registro').classList.remove('hidden');
         }
@@ -311,13 +325,13 @@
                 payload.action = 'addPedido';
                 payload.payload = { 
                     cliente: document.getElementById('p-cliente').value, 
-                    producto: document.getElementById('p-prod').value, 
+                    pedido: document.getElementById('p-pedido').value, 
                     total: parseFloat(document.getElementById('p-total').value || 0), 
-                    abono: parseFloat(document.getElementById('p-abono').value || 0), 
-                    estado: 'Por pagar' 
+                    pago: parseFloat(document.getElementById('p-pago').value || 0), 
+                    estado: document.getElementById('p-estado').value 
                 };
             } else {
-                payload.action = isPersonal ? 'addGastoPersonal' : 'addFlujo';
+                payload.action = isPersonal ? 'addPersonal' : 'addCaja';
                 payload.payload = { 
                     descripcion: document.getElementById('desc-registro').value, 
                     tipo: document.getElementById('tipo-registro').value, 
@@ -332,18 +346,15 @@
                     headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify(payload)
                 });
-                
                 const resJson = await response.json();
-                
                 if(resJson.status === "success") {
-                    alert("✅ Guardado con éxito");
                     closeModal(); 
                     fetchData();
                 } else {
-                    alert("❌ Error: " + resJson.message);
+                    alert("❌ Error en script externo.");
                 }
             } catch (err) { 
-                alert("❌ Error al conectar"); 
+                alert("❌ Error de comunicación de red.");
                 console.error(err);
             } finally {
                 if(btn) { btn.disabled = false; btn.innerText = "CONFIRMAR"; }
