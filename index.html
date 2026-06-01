@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Inverenix - Control Total</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Inverenix">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#020617">
+    
+    <link rel="manifest" href="data:application/json;base64,ewogICJkZWZhdWx0X2xvY2FsZSI6ICJlcyIsCiAgIm5hbWUiOiAiSW52ZXJlbml4IiwKICAic2hvcnRfbmFtZSI6ICJJbnZlcmVuaXgiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzAyMDYxNyIsCiAgInRoZW1lX2NvbG9yIjogIiMwMjA2MTciCn0=">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght=400;600;900&display=swap');
@@ -21,7 +30,6 @@
 
     <div class="max-w-md mx-auto h-screen flex flex-col relative shadow-2xl bg-slate-950 border-x border-slate-900">
         
-        <!-- HEADER -->
         <header class="p-6 flex justify-between items-center border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
             <div>
                 <h1 class="text-2xl font-black italic text-white tracking-tighter leading-none uppercase">Inverenix</h1>
@@ -37,10 +45,8 @@
             </button>
         </header>
 
-        <!-- CONTENIDO PRINCIPAL -->
         <main class="flex-1 overflow-y-auto p-5 pb-36 no-scrollbar">
             
-            <!-- VISTA CAJA -->
             <div id="tab-flujo" class="tab-content active">
                 <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-8 rounded-[2.5rem] border border-slate-700/50 mb-8 shadow-xl">
                     <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Saldo Total en Caja</p>
@@ -52,13 +58,11 @@
                 </div>
             </div>
 
-            <!-- VISTA PEDIDOS -->
             <div id="tab-pedidos" class="tab-content">
                 <h2 class="text-xl font-black text-white italic mb-6">Control de Pedidos</h2>
                 <div id="lista-pedidos" class="space-y-4"></div>
             </div>
 
-            <!-- VISTA PERSONAL -->
             <div id="tab-personal" class="tab-content">
                 <div class="bg-orange-500 p-8 rounded-[2.5rem] shadow-xl shadow-orange-900/20 mb-8">
                     <p class="text-orange-100 text-[10px] font-black uppercase tracking-widest mb-1">Disponible Personal</p>
@@ -71,12 +75,10 @@
             </div>
         </main>
 
-        <!-- BOTÓN ACCIÓN FLOTANTE -->
         <button onclick="openModal()" class="fixed bottom-28 right-6 w-16 h-16 bg-orange-500 rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-orange-500/40 active:scale-90 z-40 border-4 border-slate-950">
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 5v14M5 12h14"></path></svg>
         </button>
 
-        <!-- NAVEGACIÓN INFERIOR -->
         <nav class="bg-slate-900/90 backdrop-blur-2xl border-t border-slate-800 px-10 py-6 fixed bottom-0 w-full max-w-md flex justify-between items-center z-50">
             <button onclick="switchTab('flujo')" class="nav-item flex flex-col items-center gap-1.5 text-orange-500" data-tab="flujo">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
@@ -92,7 +94,6 @@
             </button>
         </nav>
 
-        <!-- FORMULARIO EMERGENTE MODAL -->
         <div id="modal-registro" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[100] hidden flex items-end">
             <div class="w-full bg-slate-900 rounded-t-[3rem] p-8 border-t border-slate-800 transition-all shadow-2xl">
                 <div class="flex justify-between items-center mb-8">
