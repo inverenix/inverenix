@@ -10,7 +10,7 @@
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; background-color: #020617; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        input, select { background-color: #0f172a !important; border: 1px solid #1e293b !important; color: white !important; }
+        input, select { background-color: #0f172a !important; border: 1px solid #1e293b !important; color: white !important; font-weight: 600; }
         input:focus { border-color: #f97316 !important; outline: none; }
         .loader-spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -23,13 +23,13 @@
         <!-- HEADER -->
         <header class="p-6 flex justify-between items-center border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
             <div>
-                <h1 class="text-2xl font-black italic text-white tracking-tighter">INVERENIX</h1>
+                <h1 class="text-2xl font-black italic text-white tracking-tighter leading-none">INVERENIX</h1>
                 <div class="flex items-center gap-1.5 mt-1">
                     <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-slate-700"></span>
-                    <span id="status-text" class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Iniciando...</span>
+                    <span id="status-text" class="text-[10px] font-black uppercase text-slate-500 tracking-widest">Sincronizando...</span>
                 </div>
             </div>
-            <button onclick="fetchData()" id="refresh-btn" class="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center hover:bg-slate-800 transition-all">
+            <button onclick="fetchData()" class="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center hover:bg-slate-800 transition-all">
                 <svg id="refresh-icon" class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                 </svg>
@@ -37,33 +37,34 @@
         </header>
 
         <!-- MAIN CONTENT -->
-        <main id="main-content" class="flex-1 overflow-y-auto p-5 pb-32">
-            <!-- TAB: CAJA -->
+        <main class="flex-1 overflow-y-auto p-5 pb-32">
+            
+            <!-- CAJA -->
             <div id="tab-flujo" class="tab-content active">
                 <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-8 rounded-[2.5rem] border border-slate-700/50 mb-8 shadow-xl">
-                    <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Saldo en Caja</p>
-                    <h2 id="saldo-caja" class="text-5xl font-black text-white">$0.00</h2>
+                    <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-1">Saldo Total en Caja</p>
+                    <h2 id="saldo-caja" class="text-4xl font-black text-white">$0.00</h2>
                 </div>
                 <div class="space-y-4">
-                    <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2 text-orange-500 font-bold">Historial de Flujo</h3>
+                    <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">Movimientos Recientes</h3>
                     <div id="lista-flujo" class="space-y-3"></div>
                 </div>
             </div>
 
-            <!-- TAB: PEDIDOS -->
+            <!-- PEDIDOS -->
             <div id="tab-pedidos" class="tab-content">
-                <h2 class="text-xl font-black text-white italic mb-6">Control de Pedidos</h2>
+                <h2 class="text-xl font-black text-white italic mb-6">Pedidos Sublimación / DTF</h2>
                 <div id="lista-pedidos" class="space-y-4"></div>
             </div>
 
-            <!-- TAB: PERSONAL -->
+            <!-- PERSONAL -->
             <div id="tab-personal" class="tab-content">
                 <div class="bg-orange-500 p-8 rounded-[2.5rem] shadow-xl shadow-orange-900/20 mb-8">
-                    <p class="text-orange-100 text-xs font-bold uppercase tracking-widest mb-1">Dinero Personal</p>
-                    <h2 id="saldo-personal" class="text-5xl font-black text-white">$0.00</h2>
+                    <p class="text-orange-100 text-xs font-bold uppercase tracking-widest mb-1">Disponible Personal</p>
+                    <h2 id="saldo-personal" class="text-4xl font-black text-white">$0.00</h2>
                 </div>
                 <div class="space-y-4">
-                    <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2 text-white">Gastos Privados</h3>
+                    <h3 class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">Gastos Privados</h3>
                     <div id="lista-personal" class="space-y-3"></div>
                 </div>
             </div>
@@ -78,21 +79,21 @@
         <nav class="bg-slate-900/80 backdrop-blur-2xl border-t border-slate-800 px-10 py-6 fixed bottom-0 w-full max-w-md flex justify-between items-center z-50">
             <button onclick="switchTab('flujo')" class="nav-item flex flex-col items-center gap-1.5 text-orange-500" data-tab="flujo">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-                <span class="text-[9px] font-black uppercase tracking-widest">Caja</span>
+                <span class="text-[9px] font-black uppercase">Caja</span>
             </button>
             <button onclick="switchTab('pedidos')" class="nav-item flex flex-col items-center gap-1.5 text-slate-600" data-tab="pedidos">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-                <span class="text-[9px] font-black uppercase tracking-widest">Pedidos</span>
+                <span class="text-[9px] font-black uppercase">Pedidos</span>
             </button>
             <button onclick="switchTab('personal')" class="nav-item flex flex-col items-center gap-1.5 text-slate-600" data-tab="personal">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                <span class="text-[9px] font-black uppercase tracking-widest">Personal</span>
+                <span class="text-[9px] font-black uppercase">Personal</span>
             </button>
         </nav>
 
         <!-- MODAL -->
         <div id="modal-registro" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[100] hidden flex items-end">
-            <div class="w-full bg-slate-900 rounded-t-[3rem] p-8 border-t border-slate-800 transition-all">
+            <div class="w-full bg-slate-900 rounded-t-[3rem] p-8 border-t border-slate-800">
                 <div class="flex justify-between items-center mb-8">
                     <h2 id="modal-title" class="text-2xl font-black text-white italic">REGISTRO</h2>
                     <button onclick="closeModal()" class="bg-slate-800 w-10 h-10 rounded-full flex items-center justify-center text-slate-400">
@@ -101,7 +102,7 @@
                 </div>
                 <form id="form-registro" class="space-y-5" onsubmit="handleFormSubmit(event)">
                     <div id="form-fields" class="space-y-4"></div>
-                    <button type="submit" id="btn-submit" class="w-full bg-orange-500 py-6 rounded-3xl text-white font-black text-lg shadow-2xl active:scale-95 transition-all">CONFIRMAR</button>
+                    <button type="submit" id="btn-submit" class="w-full bg-orange-500 py-6 rounded-3xl text-white font-black text-lg shadow-2xl active:scale-95 transition-all">CONFIRMAR REGISTRO</button>
                 </form>
             </div>
         </div>
@@ -112,19 +113,15 @@
         let currentTab = 'flujo';
         let dataGlobal = { flujo: [], pedidos: [], gastos: [] };
 
-        // --- FUNCIÓN DE NORMALIZACIÓN INTELIGENTE ---
-        function getVal(obj, keywords) {
-            if (!obj) return "";
-            const keys = Object.keys(obj);
-            for (let key of keys) {
-                // Normaliza la clave del JSON (ej: "Descripción del Movimiento" -> "descripciondelmovimiento")
-                let normalizedKey = key.toLowerCase()
-                    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quita acentos
-                    .replace(/[^a-z0-9]/g, ""); // Quita espacios y símbolos
-                
-                // Si la clave normalizada contiene alguna de las palabras clave buscadas
-                if (keywords.some(k => normalizedKey.includes(k))) {
-                    return obj[key];
+        // --- MOTOR DE EXTRACCIÓN INTELIGENTE ---
+        // Busca en el objeto de la fila cualquier propiedad que coincida con la "intención"
+        function find(row, keywords) {
+            if (!row) return "";
+            const keys = Object.keys(row);
+            for (let k of keys) {
+                let cleanKey = k.toLowerCase().replace(/[^a-z]/g, "");
+                if (keywords.some(word => cleanKey.includes(word))) {
+                    return row[k];
                 }
             }
             return "";
@@ -147,60 +144,103 @@
             const txt = document.getElementById('status-text');
             icon.classList.add('loader-spin');
             dot.className = "w-2.5 h-2.5 rounded-full bg-yellow-500 animate-pulse";
-            txt.innerText = "Actualizando...";
+            txt.innerText = "Sincronizando...";
 
             try {
                 const response = await fetch(API_URL);
-                dataGlobal = await response.json();
+                const json = await response.json();
+                
+                // Verificación de estructura
+                dataGlobal.flujo = json.flujo || [];
+                dataGlobal.pedidos = json.pedidos || [];
+                dataGlobal.gastos = json.gastos || [];
+                
                 renderAll();
                 dot.className = "w-2.5 h-2.5 rounded-full bg-green-500";
                 txt.innerText = "Conectado";
             } catch (err) {
                 dot.className = "w-2.5 h-2.5 rounded-full bg-red-500";
                 txt.innerText = "Error de Datos";
+                console.error("Fetch error:", err);
             } finally {
                 icon.classList.remove('loader-spin');
             }
         }
 
         function renderAll() {
-            // Render Flujo
+            // Render CAJA
             const lFlujo = document.getElementById('lista-flujo');
             lFlujo.innerHTML = '';
             let sCaja = 0;
-            dataGlobal.flujo.forEach(item => {
-                const ing = parseFloat(getVal(item, ['ingresopos', 'ingreso']) || 0);
-                const egr = parseFloat(getVal(item, ['egresoneg', 'egreso']) || 0);
-                const desc = getVal(item, ['descrip', 'movimiento', 'concepto']) || "Sin descripción";
-                const fecha = getVal(item, ['fecha']) || "";
+            dataGlobal.flujo.forEach(row => {
+                const ing = Number(find(row, ['ingresopos', 'ingreso'])) || 0;
+                const egr = Number(find(row, ['egresoneg', 'egreso'])) || 0;
+                const desc = find(row, ['descrip', 'movim']) || "Movimiento";
+                const fecha = find(row, ['fecha']) || "";
                 sCaja += (ing - egr);
-                lFlujo.innerHTML += `<div class="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex justify-between items-center"><div class="flex items-center gap-3"><div class="${ing > 0 ? 'text-green-500' : 'text-red-500'}"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${ing > 0 ? 'M9 11l3-3m0 0l3 3m-3-3v8' : 'M15 13l-3 3m0 0l-3-3m3 3V8'}"></path></svg></div><div><p class="text-sm font-bold text-white leading-tight">${desc}</p><p class="text-[10px] text-slate-500 mt-1 uppercase font-bold tracking-widest">${fecha ? new Date(fecha).toLocaleDateString('es-VE',{day:'2-digit',month:'2-digit'}) : 'S/F'}</p></div></div><p class="font-black ${ing > 0 ? 'text-green-400' : 'text-red-400'}">$${(ing || egr).toFixed(2)}</p></div>`;
+                
+                lFlujo.innerHTML += `
+                    <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <div class="${ing > 0 ? 'text-green-500' : 'text-red-500'}">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${ing > 0 ? 'M5 10l7-7m0 0l7 7m-7-7v18' : 'M19 14l-7 7m0 0l-7-7m7 7V3'}"></path></svg>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-white leading-tight">${desc}</p>
+                                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">${fecha ? new Date(fecha).toLocaleDateString('es-VE',{day:'2-digit',month:'2-digit'}) : 'S/F'}</p>
+                            </div>
+                        </div>
+                        <p class="font-black ${ing > 0 ? 'text-green-400' : 'text-red-400'}">$${(ing || egr).toFixed(2)}</p>
+                    </div>`;
             });
             document.getElementById('saldo-caja').innerText = `$${sCaja.toFixed(2)}`;
 
-            // Render Pedidos
+            // Render PEDIDOS
             const lPedidos = document.getElementById('lista-pedidos');
             lPedidos.innerHTML = '';
-            dataGlobal.pedidos.forEach(p => {
-                const cliente = getVal(p, ['cliente']) || "Desconocido";
-                const prod = getVal(p, ['producto', 'pedido']) || "Producto";
-                const total = parseFloat(getVal(p, ['total']) || 0);
-                const abono = parseFloat(getVal(p, ['abono']) || 0);
-                const estado = getVal(p, ['estado']) || "PENDIENTE";
-                lPedidos.innerHTML += `<div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4"><div class="flex justify-between items-start"><div><h4 class="text-white font-black text-lg leading-tight">${cliente}</h4><p class="text-orange-500 text-[10px] font-bold uppercase mt-1 tracking-tighter">${prod}</p></div><span class="text-[9px] font-black px-2 py-1 bg-slate-950 border border-slate-800 rounded text-slate-400 uppercase">${estado}</span></div><div class="grid grid-cols-3 gap-2 bg-slate-950 p-3 rounded-2xl text-center"><div><p class="text-[8px] text-slate-500 font-bold uppercase">Total</p><p class="text-xs font-black text-white">$${total}</p></div><div class="border-x border-slate-800"><p class="text-[8px] text-slate-500 font-bold uppercase tracking-tighter">Abonó</p><p class="text-xs font-black text-green-400">$${abono}</p></div><div><p class="text-[8px] text-slate-500 font-bold uppercase tracking-tighter">Resta</p><p class="text-xs font-black text-orange-500">$${(total-abono).toFixed(2)}</p></div></div></div>`;
+            dataGlobal.pedidos.forEach(row => {
+                const cli = find(row, ['client']) || "Desconocido";
+                const prd = find(row, ['product', 'pedido']) || "Producto";
+                const tot = Number(find(row, ['total'])) || 0;
+                const abo = Number(find(row, ['abon'])) || 0;
+                const est = find(row, ['estado']) || "PENDIENTE";
+                
+                lPedidos.innerHTML += `
+                    <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4 shadow-lg">
+                        <div class="flex justify-between items-start">
+                            <div class="max-w-[70%]">
+                                <h4 class="text-white font-black text-base truncate">${cli}</h4>
+                                <p class="text-orange-500 text-[10px] font-bold uppercase leading-tight">${prd}</p>
+                            </div>
+                            <span class="text-[8px] font-black px-2 py-1 bg-slate-950 border border-slate-800 rounded text-slate-400 uppercase tracking-tighter">${est}</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-2 bg-slate-950/50 p-3 rounded-2xl border border-slate-800 text-center">
+                            <div><p class="text-[8px] text-slate-500 font-bold uppercase">Total</p><p class="text-xs font-black text-white">$${tot.toFixed(2)}</p></div>
+                            <div class="border-x border-slate-800"><p class="text-[8px] text-slate-500 font-bold uppercase">Abonó</p><p class="text-xs font-black text-green-400">$${abo.toFixed(2)}</p></div>
+                            <div><p class="text-[8px] text-slate-500 font-bold uppercase">Resta</p><p class="text-xs font-black text-orange-500">$${(tot-abo).toFixed(2)}</p></div>
+                        </div>
+                    </div>`;
             });
 
-            // Render Personal
+            // Render PERSONAL
             const lPers = document.getElementById('lista-personal');
             lPers.innerHTML = '';
             let sPers = 0;
-            dataGlobal.gastos.forEach(g => {
-                const ing = parseFloat(getVal(g, ['ingresopos', 'ingreso']) || 0);
-                const egr = parseFloat(getVal(g, ['egresoneg', 'egreso']) || 0);
-                const desc = getVal(g, ['concepto', 'descrip']) || "Gasto";
-                const cat = getVal(g, ['categoria']) || "Varios";
+            dataGlobal.gastos.forEach(row => {
+                const ing = Number(find(row, ['ingresopos', 'ingreso'])) || 0;
+                const egr = Number(find(row, ['egresoneg', 'egreso'])) || 0;
+                const desc = find(row, ['concep', 'descrip']) || "Gasto";
+                const cat = find(row, ['categ']) || "Varios";
                 sPers += (ing - egr);
-                lPers.innerHTML += `<div class="bg-slate-900 p-4 border-r-4 border-orange-500 rounded-l-2xl flex justify-between items-center"><div><p class="text-sm font-bold text-white leading-tight">${desc}</p><p class="text-[10px] text-slate-500 font-black uppercase mt-1 tracking-widest">${cat}</p></div><p class="font-black ${ing > 0 ? 'text-green-400' : 'text-red-400'}">${ing > 0 ? '+' : '-'}$${(ing || egr).toFixed(2)}</p></div>`;
+                
+                lPers.innerHTML += `
+                    <div class="bg-slate-900 p-4 border-r-4 border-orange-500 rounded-l-2xl flex justify-between items-center shadow-sm">
+                        <div>
+                            <p class="text-sm font-bold text-white leading-tight">${desc}</p>
+                            <p class="text-[10px] text-slate-500 font-black uppercase tracking-widest">${cat}</p>
+                        </div>
+                        <p class="font-black ${ing > 0 ? 'text-green-400' : 'text-red-400'}">${ing > 0 ? '+' : '-'}$${(ing || egr).toFixed(2)}</p>
+                    </div>`;
             });
             document.getElementById('saldo-personal').innerText = `$${sPers.toFixed(2)}`;
         }
@@ -209,8 +249,19 @@
             const f = document.getElementById('form-fields'), t = document.getElementById('modal-title');
             f.innerHTML = '';
             if (currentTab === 'flujo' || currentTab === 'personal') {
-                t.innerText = currentTab === 'flujo' ? "FLUJO DE CAJA" : "GASTO PERSONAL";
-                f.innerHTML = `<div class="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800 mb-4"><button type="button" onclick="setTipo('Ingreso')" id="btn-ingreso" class="flex-1 py-3 rounded-xl font-black text-[10px] bg-orange-500 text-white">INGRESO</button><button type="button" onclick="setTipo('Egreso')" id="btn-egreso" class="flex-1 py-3 rounded-xl font-black text-[10px] text-slate-600">EGRESO</button></div><input type="hidden" id="tipo-registro" value="Ingreso"><input type="text" id="desc-registro" placeholder="Descripción *" required class="w-full p-5 rounded-2xl"><div class="relative"><span class="absolute left-5 top-5 text-orange-500 font-black text-2xl">$</span><input type="number" id="monto-registro" step="0.01" placeholder="0.00" required class="w-full p-5 pl-12 text-3xl font-black rounded-2xl"></div>${currentTab==='personal' ? '<select id="cat-registro" class="w-full p-5 font-bold rounded-2xl"><option>Alimentación</option><option>Transporte</option><option>Servicios</option><option>Sueldo</option><option>Ahorro</option></select>':''}`;
+                t.innerText = currentTab === 'flujo' ? "NUEVO FLUJO" : "GASTO PERSONAL";
+                f.innerHTML = `
+                    <div class="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800 mb-4">
+                        <button type="button" onclick="setTipo('Ingreso')" id="btn-ingreso" class="flex-1 py-3 rounded-xl font-black text-[10px] bg-orange-500 text-white">INGRESO (+)</button>
+                        <button type="button" onclick="setTipo('Egreso')" id="btn-egreso" class="flex-1 py-3 rounded-xl font-black text-[10px] text-slate-600">EGRESO (-)</button>
+                    </div>
+                    <input type="hidden" id="tipo-registro" value="Ingreso">
+                    <input type="text" id="desc-registro" placeholder="Descripción *" required class="w-full p-5 rounded-2xl">
+                    <div class="relative">
+                        <span class="absolute left-5 top-5 text-orange-500 font-black text-2xl">$</span>
+                        <input type="number" id="monto-registro" step="0.01" placeholder="0.00" required class="w-full p-5 pl-12 text-3xl font-black rounded-2xl">
+                    </div>
+                    ${currentTab==='personal' ? '<select id="cat-registro" class="w-full p-5 font-bold rounded-2xl"><option>Alimentación</option><option>Transporte</option><option>Servicios</option><option>Sueldo</option><option>Ahorro</option></select>':''}`;
             } else {
                 t.innerText = "NUEVO PEDIDO";
                 f.innerHTML = `<input type="text" id="p-cliente" placeholder="Cliente *" required class="w-full p-5 font-bold rounded-2xl"><input type="text" id="p-prod" placeholder="Producto *" required class="w-full p-5 font-bold rounded-2xl"><div class="grid grid-cols-2 gap-4"><input type="number" id="p-total" step="0.01" placeholder="Total $" required class="w-full p-5 font-black text-xl rounded-2xl"><input type="number" id="p-abono" step="0.01" placeholder="Abonó $" class="w-full p-5 font-black text-xl text-green-500 rounded-2xl"></div>`;
@@ -229,7 +280,7 @@
         async function handleFormSubmit(e) {
             e.preventDefault();
             const btn = document.getElementById('btn-submit');
-            btn.disabled = true; btn.innerText = "PROCESANDO...";
+            btn.disabled = true; btn.innerText = "GUARDANDO...";
             let payload = { action: '', payload: {} };
             if (currentTab === 'flujo') {
                 payload.action = 'addFlujo';
@@ -247,9 +298,9 @@
                 setTimeout(() => {
                     alert("✅ Guardado correctamente");
                     closeModal(); fetchData();
-                    btn.disabled = false; btn.innerText = "CONFIRMAR";
+                    btn.disabled = false; btn.innerText = "CONFIRMAR REGISTRO";
                 }, 1200);
-            } catch (err) { alert("Error al guardar."); btn.disabled = false; btn.innerText = "CONFIRMAR"; }
+            } catch (err) { alert("Error al guardar."); btn.disabled = false; btn.innerText = "CONFIRMAR REGISTRO"; }
         }
 
         window.onload = fetchData;
