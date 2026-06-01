@@ -6,7 +6,7 @@
     <title>Inverenix - Control Financiero</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght=400;600;900&display=swap');
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; background-color: #020617; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -102,6 +102,7 @@
     </div>
 
     <script>
+        // PEGA ENTRE LAS COMILLAS TU NUEVA URL DE GOOGLE APPS SCRIPT
         const API_URL = "https://script.google.com/macros/s/AKfycbxPY41lusUnRyqKMhpaGJjNWvWSLbpMzmR68t21JINxhVrfnliJeThjzu924pccrdak/exec";
         
         let dataGlobal = { flujo: [], pedidos: [], gastos: [] };
@@ -110,7 +111,7 @@
             if (!row) return "";
             const keys = Object.keys(row);
             for (let k of keys) {
-                let normalizedK = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                let normalizedK = k.toLowerCase();
                 if (keywords.some(word => normalizedK.includes(word))) return row[k];
             }
             return "";
@@ -145,8 +146,6 @@
                 const response = await fetch(API_URL);
                 const json = await response.json();
                 
-                console.log("Datos recibidos de Google:", json);
-
                 dataGlobal.flujo = json.flujo || [];
                 dataGlobal.pedidos = json.pedidos || [];
                 dataGlobal.gastos = json.gastos || [];
@@ -155,4 +154,206 @@
                 if (dot) dot.className = "w-2 h-2 rounded-full bg-green-500";
                 if (txt) txt.innerText = "Online";
             } catch (err) {
-                if (dot) dot.className = "w
+                if (dot) dot.className = "w-2 h-2 rounded-full bg-red-500";
+                if (txt) txt.innerText = "Error Red";
+                console.error(err);
+            } finally {
+                if (icon) icon.classList.remove('loader-spin');
+            }
+        }
+
+        function renderAll() {
+            // RENDER CAJA (Tus números lógicos originales)
+            const lFlujo = document.getElementById('lista-flujo');
+            if (lFlujo) {
+                lFlujo.innerHTML = '';
+                let sCaja = 0;
+                dataGlobal.flujo.forEach(row => {
+                    const i = cleanNum(smartGet(row, ['ingreso', '(+)']));
+                    const e = cleanNum(smartGet(row, ['egreso', '(-)']));
+                    const d = smartGet(row, ['descrip', 'movim', 'detalle']) || "Movimiento";
+                    const f = smartGet(row, ['fecha']) || "";
+                    
+                    sCaja += (i - e);
+                    const isIngreso = i > 0;
+                    
+                    lFlujo.innerHTML += `
+                        <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 flex justify-between items-center">
+                            <div class="flex items-center gap-3">
+                                <div class="${isIngreso ? 'text-green-500' : 'text-red-500'}">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${isIngreso ? 'M5 10l7-7m0 0l7 7m-7-7v18' : 'M19 14l-7 7m0 0l-7-7m7 7V3'}"></path></svg>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-white leading-none">${d}</p>
+                                    <p class="text-[9px] text-slate-500 font-black uppercase mt-1 tracking-tighter">${f || 'S/F'}</p>
+                                </div>
+                            </div>
+                            <p class="font-black ${isIngreso ? 'text-green-400' : 'text-red-400'}">${isIngreso ? '+' : '-'}$${(isIngreso ? i : e).toFixed(2)}</p>
+                        </div>`;
+                });
+                document.getElementById('saldo-caja').innerText = `$${sCaja.toFixed(2)}`;
+            }
+
+            // RENDER PEDIDOS
+            const lPedidos = document.getElementById('lista-pedidos');
+            if (lPedidos) {
+                lPedidos.innerHTML = '';
+                dataGlobal.pedidos.forEach(row => {
+                    const cli = smartGet(row, ['client', 'nombre']) || "Cliente";
+                    const prd = smartGet(row, ['product', 'pedido', 'detalle']) || "Producto";
+                    const tot = cleanNum(smartGet(row, ['total', 'monto']));
+                    const abo = cleanNum(smartGet(row, ['abon', 'pago']));
+                    const est = smartGet(row, ['estado', 'estatus']) || "Pendiente";
+                    const resta = tot - abo;
+
+                    let badgeColor = "text-slate-400 bg-slate-950";
+                    if(est.toLowerCase().includes("finalizado") || est.toLowerCase().includes("entregado")) badgeColor = "text-green-400 bg-green-950/40";
+                    if(est.toLowerCase().includes("disen") || est.toLowerCase().includes("proceso") || est.toLowerCase().includes("pagar")) badgeColor = "text-orange-400 bg-orange-950/40";
+
+                    lPedidos.innerHTML += `
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4 shadow-xl">
+                            <div class="flex justify-between items-start">
+                                <div class="max-w-[70%]">
+                                    <h4 class="text-white font-black text-lg leading-tight truncate">${cli}</h4>
+                                    <p class="text-orange-500 text-[10px] font-black uppercase mt-1 tracking-tighter">${prd}</p>
+                                </div>
+                                <span class="text-[8px] font-black px-2 py-1 border border-slate-800 rounded uppercase tracking-tighter ${badgeColor}">${est}</span>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2 bg-slate-950/50 p-3 rounded-2xl text-center border border-slate-800">
+                                <div><p class="text-[8px] text-slate-500 font-bold uppercase">Total</p><p class="text-xs font-black text-white">$${tot.toFixed(2)}</p></div>
+                                <div class="border-x border-slate-800"><p class="text-[8px] text-slate-500 font-bold uppercase">Abonó</p><p class="text-xs font-black text-green-400">$${abo.toFixed(2)}</p></div>
+                                <div><p class="text-[8px] text-slate-500 font-bold uppercase">Resta</p><p class="text-xs font-black text-orange-500">$${resta.toFixed(2)}</p></div>
+                            </div>
+                        </div>`;
+                });
+            }
+
+            // RENDER PERSONAL
+            const lPers = document.getElementById('lista-personal');
+            if (lPers) {
+                lPers.innerHTML = '';
+                let sPers = 0;
+                dataGlobal.gastos.forEach(row => {
+                    const i = cleanNum(smartGet(row, ['ingreso', '(+)']));
+                    const e = cleanNum(smartGet(row, ['egreso', '(-)']));
+                    const d = smartGet(row, ['concep', 'descrip', 'detalle']) || "Gasto";
+                    const c = smartGet(row, ['categ', 'tipo']) || "Varios";
+                    
+                    sPers += (i - e);
+                    const isIngreso = i > 0;
+
+                    lPers.innerHTML += `
+                        <div class="bg-slate-900 p-4 border-r-4 border-orange-500 rounded-l-2xl flex justify-between items-center shadow-md">
+                            <div>
+                                <p class="text-sm font-bold text-white leading-tight">${d}</p>
+                                <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-1">${c}</p>
+                            </div>
+                            <p class="font-black ${isIngreso ? 'text-green-400' : 'text-red-400'}">${isIngreso ? '+' : '-'}$${(isIngreso ? i : e).toFixed(2)}</p>
+                        </div>`;
+                });
+                document.getElementById('saldo-personal').innerText = `$${sPers.toFixed(2)}`;
+            }
+        }
+
+        function openModal() {
+            const f = document.getElementById('form-fields'), t = document.getElementById('modal-title');
+            if(!f || !t) return;
+            f.innerHTML = '';
+            const isPersonal = document.getElementById('tab-personal').classList.contains('active');
+            const isPedidos = document.getElementById('tab-pedidos').classList.contains('active');
+
+            if (!isPedidos) {
+                t.innerText = isPersonal ? "GASTO PERSONAL" : "REGISTRO CAJA";
+                f.innerHTML = `
+                    <div class="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800 mb-4">
+                        <button type="button" onclick="setTipo('Ingreso')" id="btn-ingreso" class="flex-1 py-3 rounded-xl font-black text-[10px] bg-orange-500 text-white shadow-lg">INGRESO</button>
+                        <button type="button" onclick="setTipo('Egreso')" id="btn-egreso" class="flex-1 py-3 rounded-xl font-black text-[10px] text-slate-600">EGRESO</button>
+                    </div>
+                    <input type="hidden" id="tipo-registro" value="Ingreso">
+                    <input type="text" id="desc-registro" placeholder="Descripción *" required class="w-full p-5 rounded-2xl outline-none">
+                    <div class="relative">
+                        <span class="absolute left-5 top-5 text-orange-500 font-black text-2xl">$</span>
+                        <input type="number" id="monto-registro" step="0.01" placeholder="0.00" required class="w-full p-5 pl-12 text-3xl font-black rounded-2xl outline-none">
+                    </div>
+                    ${isPersonal?'<select id="cat-registro" class="w-full p-5 font-bold rounded-2xl outline-none"><option>Alimentación</option><option>Transporte</option><option>Servicios</option><option>Sueldo</option><option>Ahorro</option></select>':''}`;
+            } else {
+                t.innerText = "NUEVO PEDIDO";
+                f.innerHTML = `
+                    <input type="text" id="p-cliente" placeholder="Cliente *" required class="w-full p-5 font-bold rounded-2xl outline-none">
+                    <input type="text" id="p-prod" placeholder="Producto *" required class="w-full p-5 font-bold rounded-2xl outline-none">
+                    <div class="grid grid-cols-2 gap-4">
+                        <input type="number" id="p-total" step="0.01" placeholder="Total $" required class="w-full p-5 font-black text-xl rounded-2xl outline-none">
+                        <input type="number" id="p-abono" step="0.01" placeholder="Abonó $" class="w-full p-5 font-black text-xl text-green-500 rounded-2xl outline-none">
+                    </div>`;
+            }
+            document.getElementById('modal-registro').classList.remove('hidden');
+        }
+
+        function setTipo(t) {
+            const r = document.getElementById('tipo-registro');
+            if(r) r.value = t;
+            const bI = document.getElementById('btn-ingreso');
+            const bE = document.getElementById('btn-egreso');
+            if(bI) bI.className = t === 'Ingreso' ? 'flex-1 py-3 rounded-xl font-black text-[10px] bg-orange-500 text-white shadow-lg' : 'flex-1 py-3 rounded-xl font-black text-[10px] text-slate-600';
+            if(bE) bE.className = t === 'Egreso' ? 'flex-1 py-3 rounded-xl font-black text-[10px] bg-orange-500 text-white shadow-lg' : 'flex-1 py-3 rounded-xl font-black text-[10px] text-slate-600';
+        }
+
+        function closeModal() { document.getElementById('modal-registro').classList.add('hidden'); }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit');
+            if(btn) { btn.disabled = true; btn.innerText = "PROCESANDO..."; }
+            
+            const isPersonal = document.getElementById('tab-personal').classList.contains('active');
+            const isPedidos = document.getElementById('tab-pedidos').classList.contains('active');
+
+            let payload = { action: '', payload: {} };
+            if (isPedidos) {
+                payload.action = 'addPedido';
+                payload.payload = { 
+                    cliente: document.getElementById('p-cliente').value, 
+                    producto: document.getElementById('p-prod').value, 
+                    total: parseFloat(document.getElementById('p-total').value || 0), 
+                    abono: parseFloat(document.getElementById('p-abono').value || 0), 
+                    estado: 'Por pagar' 
+                };
+            } else {
+                payload.action = isPersonal ? 'addGastoPersonal' : 'addFlujo';
+                payload.payload = { 
+                    descripcion: document.getElementById('desc-registro').value, 
+                    tipo: document.getElementById('tipo-registro').value, 
+                    monto: parseFloat(document.getElementById('monto-registro').value || 0),
+                    categoria: isPersonal ? document.getElementById('cat-registro').value : ""
+                };
+            }
+
+            try {
+                // Modificación experta: Se envía como string directo para evitar trabas en el motor de Apps Script
+                const response = await fetch(API_URL, { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const resJson = await response.json();
+                
+                if(resJson.status === "success") {
+                    alert("✅ Guardado con éxito");
+                    closeModal(); 
+                    fetchData();
+                } else {
+                    alert("❌ Error del servidor: " + resJson.message);
+                }
+            } catch (err) { 
+                alert("❌ Error al conectar con el servidor"); 
+                console.error(err);
+            } finally {
+                if(btn) { btn.disabled = false; btn.innerText = "CONFIRMAR"; }
+            }
+        }
+
+        window.onload = fetchData;
+    </script>
+</body>
+</html>
