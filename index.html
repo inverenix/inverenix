@@ -102,16 +102,15 @@
     </div>
 
     <script>
-        // PEGA ENTRE LAS COMILLAS TU NUEVA URL DE GOOGLE APPS SCRIPT
         const API_URL = "https://script.google.com/macros/s/AKfycbxPY41lusUnRyqKMhpaGJjNWvWSLbpMzmR68t21JINxhVrfnliJeThjzu924pccrdak/exec";
         
-        let dataGlobal = { flujo: [], pedidos: [], gastos: [] };
+        let dataGlobal = { "Inverenix - Flujo Caja": [], "Inverenix - Pedidos": [], "Gastos Personales": [] };
 
         function smartGet(row, keywords) {
             if (!row) return "";
             const keys = Object.keys(row);
             for (let k of keys) {
-                let normalizedK = k.toLowerCase();
+                let normalizedK = k.toLowerCase().trim();
                 if (keywords.some(word => normalizedK.includes(word))) return row[k];
             }
             return "";
@@ -146,9 +145,9 @@
                 const response = await fetch(API_URL);
                 const json = await response.json();
                 
-                dataGlobal.flujo = json.flujo || [];
-                dataGlobal.pedidos = json.pedidos || [];
-                dataGlobal.gastos = json.gastos || [];
+                dataGlobal["Inverenix - Flujo Caja"] = json["Inverenix - Flujo Caja"] || [];
+                dataGlobal["Inverenix - Pedidos"] = json["Inverenix - Pedidos"] || [];
+                dataGlobal["Gastos Personales"] = json["Gastos Personales"] || [];
                 
                 renderAll();
                 if (dot) dot.className = "w-2 h-2 rounded-full bg-green-500";
@@ -163,19 +162,19 @@
         }
 
         function renderAll() {
-            // RENDER CAJA (Tus números lógicos originales)
             const lFlujo = document.getElementById('lista-flujo');
             if (lFlujo) {
                 lFlujo.innerHTML = '';
                 let sCaja = 0;
-                dataGlobal.flujo.forEach(row => {
+                dataGlobal["Inverenix - Flujo Caja"].forEach(row => {
                     const i = cleanNum(smartGet(row, ['ingreso', '(+)']));
                     const e = cleanNum(smartGet(row, ['egreso', '(-)']));
-                    const d = smartGet(row, ['descrip', 'movim', 'detalle']) || "Movimiento";
+                    const d = smartGet(row, ['descrip', 'movim', 'detalle', 'concepto']) || "Movimiento";
                     const f = smartGet(row, ['fecha']) || "";
                     
                     sCaja += (i - e);
-                    const isIngreso = i > 0;
+                    const isIngreso = i > 0 || (i === 0 && e === 0);
+                    const montoMostrar = i > 0 ? i : e;
                     
                     lFlujo.innerHTML += `
                         <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 flex justify-between items-center">
@@ -188,17 +187,16 @@
                                     <p class="text-[9px] text-slate-500 font-black uppercase mt-1 tracking-tighter">${f || 'S/F'}</p>
                                 </div>
                             </div>
-                            <p class="font-black ${isIngreso ? 'text-green-400' : 'text-red-400'}">${isIngreso ? '+' : '-'}$${(isIngreso ? i : e).toFixed(2)}</p>
+                            <p class="font-black ${isIngreso ? 'text-green-400' : 'text-red-400'}">${isIngreso ? '+' : '-'}$${montoMostrar.toFixed(2)}</p>
                         </div>`;
                 });
                 document.getElementById('saldo-caja').innerText = `$${sCaja.toFixed(2)}`;
             }
 
-            // RENDER PEDIDOS
             const lPedidos = document.getElementById('lista-pedidos');
             if (lPedidos) {
                 lPedidos.innerHTML = '';
-                dataGlobal.pedidos.forEach(row => {
+                dataGlobal["Inverenix - Pedidos"].forEach(row => {
                     const cli = smartGet(row, ['client', 'nombre']) || "Cliente";
                     const prd = smartGet(row, ['product', 'pedido', 'detalle']) || "Producto";
                     const tot = cleanNum(smartGet(row, ['total', 'monto']));
@@ -228,12 +226,11 @@
                 });
             }
 
-            // RENDER PERSONAL
             const lPers = document.getElementById('lista-personal');
             if (lPers) {
                 lPers.innerHTML = '';
                 let sPers = 0;
-                dataGlobal.gastos.forEach(row => {
+                dataGlobal["Gastos Personales"].forEach(row => {
                     const i = cleanNum(smartGet(row, ['ingreso', '(+)']));
                     const e = cleanNum(smartGet(row, ['egreso', '(-)']));
                     const d = smartGet(row, ['concep', 'descrip', 'detalle']) || "Gasto";
@@ -241,6 +238,7 @@
                     
                     sPers += (i - e);
                     const isIngreso = i > 0;
+                    const montoMostrar = i > 0 ? i : e;
 
                     lPers.innerHTML += `
                         <div class="bg-slate-900 p-4 border-r-4 border-orange-500 rounded-l-2xl flex justify-between items-center shadow-md">
@@ -248,7 +246,7 @@
                                 <p class="text-sm font-bold text-white leading-tight">${d}</p>
                                 <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-1">${c}</p>
                             </div>
-                            <p class="font-black ${isIngreso ? 'text-green-400' : 'text-red-400'}">${isIngreso ? '+' : '-'}$${(isIngreso ? i : e).toFixed(2)}</p>
+                            <p class="font-black ${isIngreso ? 'text-green-400' : 'text-red-400'}">${isIngreso ? '+' : '-'}$${montoMostrar.toFixed(2)}</p>
                         </div>`;
                 });
                 document.getElementById('saldo-personal').innerText = `$${sPers.toFixed(2)}`;
@@ -329,10 +327,9 @@
             }
 
             try {
-                // Modificación experta: Se envía como string directo para evitar trabas en el motor de Apps Script
                 const response = await fetch(API_URL, { 
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify(payload)
                 });
                 
@@ -343,10 +340,10 @@
                     closeModal(); 
                     fetchData();
                 } else {
-                    alert("❌ Error del servidor: " + resJson.message);
+                    alert("❌ Error: " + resJson.message);
                 }
             } catch (err) { 
-                alert("❌ Error al conectar con el servidor"); 
+                alert("❌ Error al conectar"); 
                 console.error(err);
             } finally {
                 if(btn) { btn.disabled = false; btn.innerText = "CONFIRMAR"; }
