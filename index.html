@@ -21,7 +21,6 @@
 
     <div class="max-w-md mx-auto h-screen flex flex-col relative shadow-2xl bg-slate-950 border-x border-slate-900">
         
-        <!-- HEADER -->
         <header class="p-6 flex justify-between items-center border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-40">
             <div>
                 <h1 class="text-2xl font-black italic text-white tracking-tighter leading-none uppercase">Inverenix</h1>
@@ -37,10 +36,8 @@
             </button>
         </header>
 
-        <!-- MAIN CONTENT -->
         <main class="flex-1 overflow-y-auto p-5 pb-36 no-scrollbar">
             
-            <!-- SECCIÓN: CAJA -->
             <div id="tab-flujo" class="tab-content active">
                 <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-8 rounded-[2.5rem] border border-slate-700/50 mb-8 shadow-xl">
                     <p class="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Saldo Total en Caja</p>
@@ -52,13 +49,11 @@
                 </div>
             </div>
 
-            <!-- SECCIÓN: PEDIDOS -->
             <div id="tab-pedidos" class="tab-content">
                 <h2 class="text-xl font-black text-white italic mb-6">Control de Pedidos</h2>
                 <div id="lista-pedidos" class="space-y-4"></div>
             </div>
 
-            <!-- SECCIÓN: PERSONAL -->
             <div id="tab-personal" class="tab-content">
                 <div class="bg-orange-500 p-8 rounded-[2.5rem] shadow-xl shadow-orange-900/20 mb-8">
                     <p class="text-orange-100 text-[10px] font-black uppercase tracking-widest mb-1">Disponible Personal</p>
@@ -71,12 +66,10 @@
             </div>
         </main>
 
-        <!-- BOTÓN FLOTANTE (FAB) -->
         <button onclick="openModal()" class="fixed bottom-28 right-6 w-16 h-16 bg-orange-500 rounded-[2rem] flex items-center justify-center text-white shadow-2xl shadow-orange-500/40 active:scale-90 z-40 border-4 border-slate-950">
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 5v14M5 12h14"></path></svg>
         </button>
 
-        <!-- NAVBAR INFERIOR -->
         <nav class="bg-slate-900/90 backdrop-blur-2xl border-t border-slate-800 px-10 py-6 fixed bottom-0 w-full max-w-md flex justify-between items-center z-50">
             <button onclick="switchTab('flujo')" class="nav-item flex flex-col items-center gap-1.5 text-orange-500" data-tab="flujo">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
@@ -92,7 +85,6 @@
             </button>
         </nav>
 
-        <!-- MODAL -->
         <div id="modal-registro" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md z-[100] hidden flex items-end">
             <div class="w-full bg-slate-900 rounded-t-[3rem] p-8 border-t border-slate-800 transition-all shadow-2xl">
                 <div class="flex justify-between items-center mb-8">
@@ -110,207 +102,227 @@
     </div>
 
     <script>
-       const API_URL = "https://script.google.com/macros/s/AKfycbxPY411usUnRyqKMhpaGjJNwVwSLbpMzmrR68t21JINxhVrfnliJeThjzu924pccrdak/exec";
-
-let currentTab = 'flujo';
-let dataGlobal = { flujo: [], pedidos: [], gastos: [] };
-
-// FUNCIÓN DE EXTRACCIÓN ROBUSTA ADAPTADA A TUS COLUMNAS REALES
-function parseValue(row, keys, keywords) {
-    const key = keys.find(k => {
-        const clean = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        return keywords.some(word => clean.includes(word));
-    });
-    if (!key) return 0;
-    let val = row[key];
-    if (val === undefined || val === null || val === "") return 0;
-    let parsed = parseFloat(val.toString().replace(/[\$\s]/g, "").replace(",", "."));
-    return isNaN(parsed) ? 0 : parsed;
-}
-
-function parseText(row, keys, keywords) {
-    const key = keys.find(k => {
-        const clean = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        return keywords.some(word => clean.includes(word));
-    });
-    return key ? (row[key] || "").toString().trim() : "";
-}
-
-async function fetchData() {
-    try {
-        const response = await fetch(API_URL);
-        const data = await response.json();
-        console.log("Datos crudos recibidos de Google:", data);
+        const API_URL = "https://script.google.com/macros/s/AKfycbxPY41lusUnRyqKMhpaGJjNWvWSLbpMzmR68t21JINxhVrfnliJeThjzu924pccrdak/exec";
         
-        // 1. PROCESAR FLUJO DE CAJA (Inverenix - Flujo Caja)
-        if (data.flujo && data.flujo.length > 0) {
-            const keys = Object.keys(data.flujo[0]);
-            dataGlobal.flujo = data.flujo.map(row => {
-                const ingreso = parseValue(row, keys, ["ingreso", "ingresos", "(+)"]);
-                const egreso = parseValue(row, keys, ["egreso", "egresos", "(-)"]);
-                return {
-                    fecha: parseText(row, keys, ["fecha"]),
-                    descripcion: parseText(row, keys, ["descripcion", "movimiento", "detalle"]),
-                    ingreso: ingreso,
-                    egreso: egreso,
-                    monto: ingreso - egreso
-                };
+        let dataGlobal = { flujo: [], pedidos: [], gastos: [] };
+
+        // BUSCADOR INTELIGENTE POR PALABRAS CLAVE (Adaptado a tus símbolos reales)
+        function smartGet(row, keywords) {
+            if (!row) return "";
+            const keys = Object.keys(row);
+            for (let k of keys) {
+                let normalizedK = k.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                if (keywords.some(word => normalizedK.includes(word))) return row[k];
+            }
+            return "";
+        }
+
+        function cleanNum(val) {
+            if (typeof val === 'number') return val;
+            if (!val) return 0;
+            let clean = val.toString().replace(/[^0-9.,-]/g, "").replace(",", ".");
+            return parseFloat(clean) || 0;
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(el => {
+                const isSelected = el.getAttribute('data-tab') === tab;
+                el.classList.toggle('text-orange-500', isSelected);
+                el.classList.toggle('text-slate-600', !isSelected);
             });
         }
 
-        // 2. PROCESAR PEDIDOS (Inverenix - Pedidos)
-        if (data.pedidos && data.pedidos.length > 0) {
-            const keys = Object.keys(data.pedidos[0]);
-            dataGlobal.pedidos = data.pedidos.map(row => ({
-                cliente: parseText(row, keys, ["cliente"]),
-                producto: parseText(row, keys, ["producto", "pedido"]),
-                total: parseValue(row, keys, ["total"]),
-                abono: parseValue(row, keys, ["abono", "abono"]),
-                resta: parseValue(row, keys, ["resta", "pagar"]),
-                estado: parseText(row, keys, ["estado"])
-            }));
+        async function fetchData() {
+            const icon = document.getElementById('refresh-icon');
+            const dot = document.getElementById('status-dot');
+            const txt = document.getElementById('status-text');
+            if (icon) icon.classList.add('loader-spin');
+            if (dot) dot.className = "w-2 h-2 rounded-full bg-yellow-500 animate-pulse";
+            if (txt) txt.innerText = "Sincronizando...";
+
+            try {
+                const response = await fetch(API_URL);
+                const json = await response.json();
+                
+                console.log("Datos del JSON procesados:", json);
+
+                dataGlobal.flujo = json.flujo || [];
+                dataGlobal.pedidos = json.pedidos || [];
+                dataGlobal.gastos = json.gastos || [];
+                
+                renderAll();
+                if (dot) dot.className = "w-2 h-2 rounded-full bg-green-500";
+                if (txt) txt.innerText = "Online";
+            } catch (err) {
+                if (dot) dot.className = "w-2 h-2 rounded-full bg-red-500";
+                if (txt) txt.innerText = "Error Red";
+                console.error("Error en Fetch:", err);
+            } finally {
+                if (icon) icon.classList.remove('loader-spin');
+            }
         }
 
-        // 3. PROCESAR GASTOS PERSONALES (Gastos Personales)
-        if (data.gastos && data.gastos.length > 0) {
-            const keys = Object.keys(data.gastos[0]);
-            dataGlobal.gastos = data.gastos.map(row => {
-                const ingreso = parseValue(row, keys, ["ingreso", "ingresos", "(+)"]);
-                const egreso = parseValue(row, keys, ["egreso", "egresos", "(-)"]);
-                return {
-                    fecha: parseText(row, keys, ["fecha"]),
-                    descripcion: parseText(row, keys, ["concepto", "descripcion", "detalle"]),
-                    categoria: parseText(row, keys, ["categoria"]),
-                    ingreso: ingreso,
-                    egreso: egreso,
-                    monto: ingreso - egreso
+        function renderAll() {
+            // 1. RENDER CAJA (Inverenix - Flujo Caja)
+            const lFlujo = document.getElementById('lista-flujo');
+            if (lFlujo) {
+                lFlujo.innerHTML = '';
+                let sCaja = 0;
+                dataGlobal.flujo.forEach(row => {
+                    const keys = Object.keys(row);
+                    const i = cleanNum(smartGet(row, ['ingreso', '(+)']));
+                    const e = cleanNum(smartGet(row, ['egreso', '(-)']));
+                    const d = smartGet(row, ['descrip', 'movim', 'detalle']) || "Movimiento";
+                    const f = smartGet(row, ['fecha']) || "";
+                    
+                    sCaja += (i - e);
+                    const isIngreso = i > 0;
+                    
+                    lFlujo.innerHTML += `
+                        <div class="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 flex justify-between items-center">
+                            <div class="flex items-center gap-3">
+                                <div class="${isIngreso ? 'text-green-500' : 'text-red-500'}">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${isIngreso ? 'M5 10l7-7m0 0l7 7m-7-7v18' : 'M19 14l-7 7m0 0l-7-7m7 7V3'}"></path></svg>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-bold text-white leading-none">${d}</p>
+                                    <p class="text-[9px] text-slate-500 font-black uppercase mt-1 tracking-tighter">${f || 'S/F'}</p>
+                                </div>
+                            </div>
+                            <p class="font-black ${isIngreso ? 'text-green-400' : 'text-red-400'}">${isIngreso ? '+' : '-'}$${(isIngreso ? i : e).toFixed(2)}</p>
+                        </div>`;
+                });
+                document.getElementById('saldo-caja').innerText = `$${sCaja.toFixed(2)}`;
+            }
+
+            // 2. RENDER PEDIDOS
+            const lPedidos = document.getElementById('lista-pedidos');
+            if (lPedidos) {
+                lPedidos.innerHTML = '';
+                dataGlobal.pedidos.forEach(row => {
+                    const cli = smartGet(row, ['client', 'nombre']) || "Cliente";
+                    const prd = smartGet(row, ['product', 'pedido', 'detalle']) || "Producto";
+                    const tot = cleanNum(smartGet(row, ['total', 'monto']));
+                    const abo = cleanNum(smartGet(row, ['abon', 'pago']));
+                    const est = smartGet(row, ['estado', 'estatus']) || "Pendiente";
+                    const resta = tot - abo;
+
+                    let badgeColor = "text-slate-400 bg-slate-950";
+                    if(est.toLowerCase().includes("finalizado") || est.toLowerCase().includes("entregado")) badgeColor = "text-green-400 bg-green-950/40";
+                    if(est.toLowerCase().includes("disen") || est.toLowerCase().includes("proceso")) badgeColor = "text-orange-400 bg-orange-950/40";
+
+                    lPedidos.innerHTML += `
+                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4 shadow-xl">
+                            <div class="flex justify-between items-start">
+                                <div class="max-w-[70%]">
+                                    <h4 class="text-white font-black text-lg leading-tight truncate">${cli}</h4>
+                                    <p class="text-orange-500 text-[10px] font-black uppercase mt-1 tracking-tighter">${prd}</p>
+                                </div>
+                                <span class="text-[8px] font-black px-2 py-1 border border-slate-800 rounded uppercase tracking-tighter ${badgeColor}">${est}</span>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2 bg-slate-950/50 p-3 rounded-2xl text-center border border-slate-800">
+                                <div><p class="text-[8px] text-slate-500 font-bold uppercase">Total</p><p class="text-xs font-black text-white">$${tot.toFixed(2)}</p></div>
+                                <div class="border-x border-slate-800"><p class="text-[8px] text-slate-500 font-bold uppercase">Abonó</p><p class="text-xs font-black text-green-400">$${abo.toFixed(2)}</p></div>
+                                <div><p class="text-[8px] text-slate-500 font-bold uppercase">Resta</p><p class="text-xs font-black text-orange-500">$${resta.toFixed(2)}</p></div>
+                            </div>
+                        </div>`;
+                });
+            }
+
+            // 3. RENDER PERSONAL (Gastos Personales)
+            const lPers = document.getElementById('lista-personal');
+            if (lPers) {
+                lPers.innerHTML = '';
+                let sPers = 0;
+                dataGlobal.gastos.forEach(row => {
+                    const i = cleanNum(smartGet(row, ['ingreso', '(+)']));
+                    const e = cleanNum(smartGet(row, ['egreso', '(-)']));
+                    const d = smartGet(row, ['concep', 'descrip', 'detalle']) || "Gasto";
+                    const c = smartGet(row, ['categ', 'tipo']) || "Varios";
+                    
+                    sPers += (i - e);
+                    const isIngreso = i > 0;
+
+                    lPers.innerHTML += `
+                        <div class="bg-slate-900 p-4 border-r-4 border-orange-500 rounded-l-2xl flex justify-between items-center shadow-md">
+                            <div>
+                                <p class="text-sm font-bold text-white leading-tight">${d}</p>
+                                <p class="text-[9px] text-slate-500 font-black uppercase tracking-widest mt-1">${c}</p>
+                            </div>
+                            <p class="font-black ${isIngreso ? 'text-green-400' : 'text-red-400'}">${isIngreso ? '+' : '-'}$${(isIngreso ? i : e).toFixed(2)}</p>
+                        </div>`;
+                });
+                document.getElementById('saldo-personal').innerText = `$${sPers.toFixed(2)}`;
+            }
+        }
+
+        function openModal() {
+            const f = document.getElementById('form-fields'), t = document.getElementById('modal-title');
+            if(!f || !t) return;
+            f.innerHTML = '';
+            const isPersonal = document.getElementById('tab-personal').classList.contains('active');
+            const isPedidos = document.getElementById('tab-pedidos').classList.contains('active');
+
+            if (!isPedidos) {
+                t.innerText = isPersonal ? "GASTO PERSONAL" : "REGISTRO CAJA";
+                f.innerHTML = `<div class="flex bg-slate-950 p-1.5 rounded-2xl border border-slate-800 mb-4"><button type="button" onclick="setTipo('Ingreso')" id="btn-ingreso" class="flex-1 py-3 rounded-xl font-black text-[10px] bg-orange-500 text-white shadow-lg">INGRESO</button><button type="button" onclick="setTipo('Egreso')" id="btn-egreso" class="flex-1 py-3 rounded-xl font-black text-[10px] text-slate-600">EGRESO</button></div><input type="hidden" id="tipo-registro" value="Ingreso"><input type="text" id="desc-registro" placeholder="Descripción *" required class="w-full p-5 rounded-2xl outline-none"><div class="relative"><span class="absolute left-5 top-5 text-orange-500 font-black text-2xl">$</span><input type="number" id="monto-registro" step="0.01" placeholder="0.00" required class="w-full p-5 pl-12 text-3xl font-black rounded-2xl outline-none"></div>${isPersonal?'<select id="cat-registro" class="w-full p-5 font-bold rounded-2xl outline-none"><option>Alimentación</option><option>Transporte</option><option>Servicios</option><option>Sueldo</option><option>Ahorro</option></select>':''}`;
+            } else {
+                t.innerText = "NUEVO PEDIDO";
+                f.innerHTML = `<input type="text" id="p-cliente" placeholder="Cliente *" required class="w-full p-5 font-bold rounded-2xl outline-none"><input type="text" id="p-prod" placeholder="Producto *" required class="w-full p-5 font-bold rounded-2xl outline-none"><div class="grid grid-cols-2 gap-4"><input type="number" id="p-total" step="0.01" placeholder="Total $" required class="w-full p-5 font-black text-xl rounded-2xl outline-none"><input type="number" id="p-abono" step="0.01" placeholder="Abonó $" class="w-full p-5 font-black text-xl text-green-500 rounded-2xl outline-none"></div>`;
+            }
+            document.getElementById('modal-registro').classList.remove('hidden');
+        }
+
+        function setTipo(t) {
+            const r = document.getElementById('tipo-registro');
+            if(r) r.value = t;
+            const bI = document.getElementById('btn-ingreso');
+            const bE = document.getElementById('btn-egreso');
+            if(bI) bI.className = t === 'Ingreso' ? 'flex-1 py-3 rounded-xl font-black text-[10px] bg-orange-500 text-white shadow-lg' : 'flex-1 py-3 rounded-xl font-black text-[10px] text-slate-600';
+            if(bE) bE.className = t === 'Egreso' ? 'flex-1 py-3 rounded-xl font-black text-[10px] bg-orange-500 text-white shadow-lg' : 'flex-1 py-3 rounded-xl font-black text-[10px] text-slate-600';
+        }
+
+        function closeModal() { document.getElementById('modal-registro').classList.add('hidden'); }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit');
+            if(btn) { btn.disabled = true; btn.innerText = "PROCESANDO..."; }
+            
+            const isPersonal = document.getElementById('tab-personal').classList.contains('active');
+            const isPedidos = document.getElementById('tab-pedidos').classList.contains('active');
+
+            let payload = { action: '', payload: {} };
+            if (isPedidos) {
+                payload.action = 'addPedido';
+                payload.payload = { cliente: document.getElementById('p-cliente').value, producto: document.getElementById('p-prod').value, total: parseFloat(document.getElementById('p-total').value), abono: parseFloat(document.getElementById('p-abono').value || 0), estado: 'Por Diseñar' };
+            } else {
+                payload.action = isPersonal ? 'addGastoPersonal' : 'addFlujo';
+                payload.payload = { 
+                    descripcion: document.getElementById('desc-registro').value, 
+                    concepto: document.getElementById('desc-registro').value,
+                    tipo: document.getElementById('tipo-registro').value, 
+                    monto: parseFloat(document.getElementById('monto-registro').value),
+                    categoria: isPersonal ? document.getElementById('cat-registro').value : ""
                 };
-            });
+            }
+
+            try {
+                await fetch(API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+                setTimeout(() => {
+                    alert("✅ Guardado");
+                    closeModal(); fetchData();
+                    if(btn) { btn.disabled = false; btn.innerText = "CONFIRMAR"; }
+                }, 1000);
+            } catch (err) { 
+                alert("Error"); 
+                if(btn) { btn.disabled = false; btn.innerText = "CONFIRMAR"; }
+            }
         }
 
-        renderApp();
-    } catch (error) {
-        console.error("Error cargando los datos financieros:", error);
-    }
-}
-
-function renderApp() {
-    // ---- CÁLCULOS DE SALDOS ----
-    const saldoCajaInverenix = dataGlobal.flujo.reduce((sum, item) => sum + item.monto, 0);
-    const saldoPersonal = dataGlobal.gastos.reduce((sum, item) => sum + item.monto, 0);
-
-    // Actualizar tarjetas de Balance Principal
-    const cajaEl = document.getElementById('saldo-caja');
-    if (cajaEl) cajaEl.innerText = `$${saldoCajaInverenix.toFixed(2)}`;
-    
-    const personalEl = document.getElementById('saldo-personal');
-    if (personalEl) personalEl.innerText = `$${saldoPersonal.toFixed(2)}`;
-
-    // Renderizar la lista dinámica según la pestaña activa
-    const container = document.getElementById('lista-movimientos');
-    if (!container) return;
-    container.innerHTML = "";
-
-    if (currentTab === 'flujo') {
-        if (dataGlobal.flujo.length === 0) {
-            container.innerHTML = `<p class="text-slate-400 text-center py-4">No hay movimientos registrados.</p>`;
-            return;
-        }
-        dataGlobal.flujo.forEach(item => {
-            const isIngreso = item.ingreso > 0;
-            const displayMonto = isIngreso ? `+ $${item.ingreso.toFixed(2)}` : `- $${item.egreso.toFixed(2)}`;
-            const colorClass = isIngreso ? 'text-emerald-400' : 'text-rose-400';
-            
-            container.innerHTML += `
-                <div class="bg-slate-800/60 p-4 rounded-2xl flex justify-between items-center border border-slate-700/40">
-                    <div>
-                        <p class="font-medium text-white text-base">${item.descripcion || 'Movimiento sin detalle'}</p>
-                        <p class="text-xs text-slate-400 mt-0.5">${item.fecha || ''}</p>
-                    </div>
-                    <span class="font-bold text-base ${colorClass}">${displayMonto}</span>
-                </div>
-            `;
-        });
-    } else if (currentTab === 'pedidos') {
-        if (dataGlobal.pedidos.length === 0) {
-            container.innerHTML = `<p class="text-slate-400 text-center py-4">No hay pedidos registrados.</p>`;
-            return;
-        }
-        dataGlobal.pedidos.forEach(item => {
-            let badgeColor = "bg-slate-700 text-slate-300";
-            if (item.estado.toLowerCase().includes("finalizado")) badgeColor = "bg-emerald-500/20 text-emerald-400";
-            if (item.estado.toLowerCase().includes("pagar")) badgeColor = "bg-amber-500/20 text-amber-400";
-            if (item.estado.toLowerCase().includes("entrega")) badgeColor = "bg-blue-500/20 text-blue-400";
-
-            container.innerHTML += `
-                <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/40 space-y-2">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <p class="font-bold text-white text-base">${item.cliente || 'Cliente Anónimo'}</p>
-                            <p class="text-sm text-slate-300">${item.producto || 'Productos varios'}</p>
-                        </div>
-                        <span class="text-xs px-2.5 py-1 rounded-full font-medium ${badgeColor}">${item.estado}</span>
-                    </div>
-                    <div class="grid grid-cols-3 gap-2 pt-2 border-t border-slate-700/30 text-center">
-                        <div>
-                            <p class="text-[10px] text-slate-400 uppercase tracking-wider">Total</p>
-                            <p class="text-sm font-semibold text-white">$${item.total.toFixed(2)}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-slate-400 uppercase tracking-wider">Abonó</p>
-                            <p class="text-sm font-semibold text-emerald-400">$${item.abono.toFixed(2)}</p>
-                        </div>
-                        <div>
-                            <p class="text-[10px] text-slate-400 uppercase tracking-wider">Resta</p>
-                            <p class="text-sm font-semibold ${item.resta > 0 ? 'text-rose-400' : 'text-slate-400'}">$${item.resta.toFixed(2)}</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-    } else if (currentTab === 'gastos') {
-        if (dataGlobal.gastos.length === 0) {
-            container.innerHTML = `<p class="text-slate-400 text-center py-4">No hay gastos registrados.</p>`;
-            return;
-        }
-        dataGlobal.gastos.forEach(item => {
-            const isIngreso = item.ingreso > 0;
-            const displayMonto = isIngreso ? `+ $${item.ingreso.toFixed(2)}` : `- $${item.egreso.toFixed(2)}`;
-            const colorClass = isIngreso ? 'text-emerald-400' : 'text-rose-400';
-            
-            container.innerHTML += `
-                <div class="bg-slate-800/60 p-4 rounded-2xl flex justify-between items-center border border-slate-700/40">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <p class="font-medium text-white text-base">${item.descripcion || 'Gasto'}</p>
-                            <span class="text-[10px] bg-slate-700 text-slate-300 px-2 py-0.5 rounded-md font-medium uppercase">${item.categoria || 'General'}</span>
-                        </div>
-                        <p class="text-xs text-slate-400 mt-1">${item.fecha || ''}</p>
-                    </div>
-                    <span class="font-bold text-base ${colorClass}">${displayMonto}</span>
-                </div>
-            `;
-        });
-    }
-}
-
-function switchTab(tab) {
-    currentTab = tab;
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('text-orange-500', 'border-orange-500', 'text-white');
-        btn.classList.add('text-slate-400');
-    });
-    
-    const activeBtn = document.getElementById(`btn-${tab}`);
-    if (activeBtn) {
-        activeBtn.classList.remove('text-slate-400');
-        activeBtn.classList.add('text-orange-500', 'border-orange-500', 'font-bold');
-    }
-    
-    renderApp();
-}
-
-window.onload = fetchData;
+        window.onload = fetchData;
     </script>
 </body>
 </html>
